@@ -1,0 +1,15 @@
+{
+  "name": "astrosim",
+  "version": "0.0.1",
+  "description": "A simulation of the movement of the planets.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "simulation",
+    "astrosim"
+  ],
+  "author": "Peter Mader",
+  "license": "GPL-3.0"
+}
