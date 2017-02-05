@@ -1,0 +1,16 @@
+title: AstroSim
+description:
+  Documentation of PeterMader/astrosim
+baseurl: ""
+url: "petermader.github.io" # the base hostname & protocol
+github_username:  PeterMader
+repository: PeterMader/astrosim
+
+# Build settings
+markdown: kramdown
+theme: jekyll-theme-minimal
+gems:
+  - jekyll-feed
+exclude:
+  - Gemfile
+  - Gemfile.lock
