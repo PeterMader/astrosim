@@ -1,10 +1,12 @@
-ASTRO.content = {
+const ASTRO = require('../astrosim.js')
+const Vec2 = require('./vec2.js')
+
+const content = module.exports = ASTRO.content = {
 
   editedObject: null, // the last object the user edited
   objects: [], // all the objects that exist
   currentId: 0, // an incremental id count
   METERS_PER_PIXEL: 3e8,
-  TIME_FACTOR: 1e6, // the factor the time passed is multiplied by
   GRAVITY_CONSTANT: 6.67408e-11,
 
   ticks: 0,
@@ -12,9 +14,16 @@ ASTRO.content = {
   pendingTicks: 0,
   TICKS_PER_FRAME: 10,
 
+  SECONDS_IN_YEAR: 31556927, // a year has 31,556,927
+  TIME_FACTOR: 1, // the factor the time passed is multiplied by
+
   temp1: Vec2.create(),
   temp2: Vec2.create(),
   temp3: Vec2.create(),
+
+  initialize () {
+    this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
+  },
 
   // saves all the objects passed to it and displays them
   add () {
@@ -34,9 +43,9 @@ ASTRO.content = {
       this.TICKS_PER_FRAME -= 1
     }
     const {objects} = ASTRO.content
-    ASTRO.content.ticks += 1
-    const deltaSecs = deltaTime / 1000 * ASTRO.content.TIME_FACTOR / this.TICKS_PER_FRAME
-    ASTRO.content.realTime += deltaSecs
+    this.ticks += 1
+    const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
+    this.realTime += deltaSecs
     let index
     while (this.pendingTicks > 0) {
       for (index in objects) {

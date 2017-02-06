@@ -1,4 +1,4 @@
-class Color {
+module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
     this.g = Color.getInt(g || 0)

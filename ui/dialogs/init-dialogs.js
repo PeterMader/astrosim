@@ -1,4 +1,4 @@
-ASTRO.ui.dialogs = {
+module.exports = {
 
   viewportDialog: null,
   objectDialog: null,
@@ -6,10 +6,10 @@ ASTRO.ui.dialogs = {
   deserializeDialog: null,
 
   initialize () {
-    this.viewportDialog = this.initViewportDialog()
-    this.objectDialog = this.initObjectDialog()
-    this.newObjectDialog = this.initNewObjectDialog()
-    this.deserializeDialog = this.initDeserializeDialog()
+    this.viewportDialog = require('./viewport-dialog.js')
+    this.objectDialog = require('./object-dialog.js')
+    this.newObjectDialog = require('./new-object-dialog.js')
+    this.deserializeDialog = require('./deserialize-dialog.js')
   },
   validPositionInput (input, value) {
     return true

@@ -1,5 +1,10 @@
-class Body {
-  constructor (position, mass, radius) {
+const Vec2 = require('./vec2.js')
+const Color = require('../animation/color.js')
+const {content} = require('../astrosim.js')
+const ASTRO = require('../astrosim.js')
+
+module.exports = class Body {
+  constructor (position, mass, radius, name) {
     this.position = position
     this.velocity = Vec2.create()
     this.mass = mass || 0

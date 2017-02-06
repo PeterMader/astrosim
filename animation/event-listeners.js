@@ -1,4 +1,6 @@
-ASTRO.animation.addEventListeners = function () {
+const animation = require('./animation.js')
+
+module.exports = function () {
   const {canvas} = this
 
   const translate = (e) => {
@@ -6,13 +8,13 @@ ASTRO.animation.addEventListeners = function () {
       return
     }
 
-    this.translate(startX - e.clientX, startY - e.clientY)
+    animation.translate(startX - e.clientX, startY - e.clientY)
 
     document.body.position = 'absolute'
   }
 
   window.addEventListener('resize', () => {
-    this.adjust()
+    animation.adjust()
   })
 
   // event for the scaling
@@ -21,7 +23,7 @@ ASTRO.animation.addEventListeners = function () {
     const clientX = (e.clientX - canvas.offsetLeft) || (canvas.width / 2)
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
-    this.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
+    animation.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
   })
 
   // events for the canvas translation

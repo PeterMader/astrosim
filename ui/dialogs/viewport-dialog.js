@@ -1,38 +1,39 @@
-ASTRO.ui.dialogs.initViewportDialog = (function () {
-  const viewportDialog = new Dialog(document.getElementById('viewport-dialog'))
+const animation = require('../../animation/animation.js')
+const content = require('../../content/content.js')
+const Dialog = require('./dialog.js')
+const ui = require('../../ui/ui.js')
 
-  // get the input elements
-  const translationX = document.getElementById('viewport-translation-x')
-  const translationY = document.getElementById('viewport-translation-y')
-  const scalingFactor = document.getElementById('viewport-scaling-factor')
+const viewportDialog = module.exports = new Dialog(document.getElementById('viewport-dialog'))
 
-  // set the filter logic of the input elements
-  viewportDialog.registerInput(translationX, translationY, scalingFactor)
+// get the input elements
+const translationX = document.getElementById('viewport-translation-x')
+const translationY = document.getElementById('viewport-translation-y')
+const scalingFactor = document.getElementById('viewport-scaling-factor')
 
-  viewportDialog.setValues = () => {
-    viewportDialog.set({
-      'translation-x': ASTRO.ui.translation[0].toExponential(3),
-      'translation-y': ASTRO.ui.translation[1].toExponential(3),
-      'scaling-factor': ASTRO.ui.ratio.toExponential(3)
-    })
+// set the filter logic of the input elements
+viewportDialog.registerInput(translationX, translationY, scalingFactor)
+
+viewportDialog.setValues = () => {
+  viewportDialog.set({
+    'translation-x': ui.translation[0].toExponential(3),
+    'translation-y': ui.translation[1].toExponential(3),
+    'scaling-factor': ui.ratio.toExponential(3)
+  })
+}
+
+document.getElementById('center-viewport').addEventListener('click', () => {
+  animation.translation[0] = 0
+  animation.translation[1] = 0
+  ui.selectedObject = null
+  viewportDialog.setValues()
+})
+
+document.getElementById('viewport-submit').addEventListener('click', () => {
+  if (viewportDialog.validate()) {
+    animation.translation[0] = Number(translationX.value)
+    animation.translation[1] = Number(translationY.value)
+    animation.ratio = Number(scalingFactor.value)
+    viewportDialog.close()
+    animation.shouldRender = true
   }
-
-  document.getElementById('center-viewport').addEventListener('click', () => {
-    ASTRO.ui.translation[0] = 0
-    ASTRO.ui.translation[1] = 0
-    ASTRO.ui.selectedObject = null
-    ASTRO.ui.dialogs.viewportDialog.setValues()
-  })
-
-  document.getElementById('viewport-submit').addEventListener('click', () => {
-    if (viewportDialog.validate()) {
-      ASTRO.ui.translation[0] = Number(translationX.value)
-      ASTRO.ui.translation[1] = Number(translationY.value)
-      ASTRO.ui.ratio = Number(scalingFactor.value)
-      viewportDialog.close()
-      ASTRO.ui.shouldRender = true
-    }
-  })
-
-  return viewportDialog
 })

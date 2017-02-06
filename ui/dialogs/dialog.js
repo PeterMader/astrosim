@@ -1,4 +1,4 @@
-class Dialog {
+module.exports = class Dialog {
   constructor (element) {
     this.element = element
     element.classList.add('ASTRO-dialog')

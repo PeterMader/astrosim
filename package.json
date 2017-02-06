@@ -2,14 +2,20 @@
   "name": "astrosim",
   "version": "0.0.1",
   "description": "A simulation of the movement of the planets.",
-  "main": "app.js",
+  "main": "astrosim.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build-debug": "browserify astrosim.js -o build/astrosim.js",
+    "build-release": "browserify astrosim.js | uglifyjs > build/astrosim.min.js"
   },
   "keywords": [
     "simulation",
     "astrosim"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/PeterMader/astrosim.git"
+  },
   "author": "Peter Mader",
-  "license": "GPL-3.0"
+  "license": "MIT",
+  "devDependencies": {}
 }

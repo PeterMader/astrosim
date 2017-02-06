@@ -1,4 +1,4 @@
-class Loop {
+module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
     this.started = false

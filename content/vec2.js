@@ -1,4 +1,4 @@
-class Vec2 {
+module.exports = class Vec2 {
 
   static create (x, y) {
     const newVector = new Float32Array(2)

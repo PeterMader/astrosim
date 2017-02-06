@@ -1,16 +1,20 @@
-const Serializer = class {
+const animation = require('../animation/animation.js')
+const content = require('../content/content.js')
+const ui = require('../ui/ui.js')
+
+module.exports = class Serializer {
 
   // create the data to serialize
   static createData () {
     const data = {}
     data.viewport = {
-      translationX: ASTRO.ui.translation[0],
-      translationY: ASTRO.ui.translation[1],
-      ratio: ASTRO.ui.ratio
+      translationX: animation.translation[0],
+      translationY: animation.translation[1],
+      ratio: animation.ratio
     }
     data.content = {
-      selectedObject: ASTRO.ui.selectedObject ? ASTRO.ui.selectedObject.serialize() : null,
-      objects: ASTRO.content.objects.map((body) => body.serialize())
+      selectedObject: ui.selectedObject ? ui.selectedObject.serialize() : null,
+      objects: content.objects.map((body) => body.serialize())
     }
     return data
   }
@@ -21,7 +25,7 @@ const Serializer = class {
       type: 'application/json'
     })
     a.href = URL.createObjectURL(file)
-    a.download = 'ASTRO-scene.json'
+    a.download = 'astro-scene.json'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

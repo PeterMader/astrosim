@@ -1,4 +1,9 @@
-const Deserializer = class {
+const animation = require('../animation/animation.js')
+const Body = require('../content/body.js')
+const content = require('../content/content.js')
+const ui = require('../ui/ui.js')
+
+module.exports = class Deserializer {
 
   static deserialize (string) {
     let data
@@ -10,16 +15,18 @@ const Deserializer = class {
     }
 
     if (Deserializer.validateData(data)) {
-      ASTRO.content.objects = []
-      ASTRO.content.currentId = 0
-      ASTRO.content.add.apply(ASTRO.content, data.content.objects.map((item) => Body.fromSerialized(item)))
-      ASTRO.content.selectedObject = Body.fromSerialized(data.content.selectedObject)
-      ASTRO.animation.translation[0] = data.viewport.translationX
-      ASTRO.animation.translation[1] = data.viewport.translationY
-      ASTRO.animation.ratio = data.viewport.ratio
-      ASTRO.ui.update()
-      ASTRO.ui.pause()
-      ASTRO.animation.shouldRender = true
+      content.objects = []
+      content.currentId = 0
+      content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
+      content.selectedObject = Body.fromSerialized(data.content.selectedObject)
+
+      animation.translation[0] = data.viewport.translationX
+      animation.translation[1] = data.viewport.translationY
+      animation.ratio = data.viewport.ratio
+
+      animation.shouldRender = true
+      ui.update()
+      ui.pause()
     } else {
       console.log('Invalid file!')
     }

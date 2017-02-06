@@ -1,4 +1,10 @@
-ASTRO.ui.addEventListeners = function () {
+const animation = require('../animation/animation.js')
+const content = require('../content/content.js')
+const {mainLoop} = require('../astrosim.js')
+const Serializer = require('../serialization/serializer.js')
+const ui = require('../ui/ui.js')
+
+module.exports = function () {
 
   // events for the buttons
   document.getElementById('serialize-button').addEventListener('click', () => {
@@ -10,23 +16,23 @@ ASTRO.ui.addEventListeners = function () {
     this.updateSelection()
   })
   this.togglePauseButton.addEventListener('click', () => {
-    if (ASTRO.mainLoop.running) {
-      ASTRO.ui.pause()
+    if (mainLoop.running) {
+      ui.pause()
     } else {
-      ASTRO.ui.unpause()
+      ui.unpause()
     }
   })
   document.getElementById('open-new-object-dialog').addEventListener('click', () => {
-    ASTRO.animation.pause()
+    animation.pause()
     this.dialogs.newObjectDialog.open()
   })
   document.getElementById('object-delete').addEventListener('click', () => {
-    const object = ASTRO.content.editedObject
-    const index = ASTRO.content.objects.indexOf(object)
+    const object = content.editedObject
+    const index = content.objects.indexOf(object)
     if (index > -1) {
-      ASTRO.content.objects.splice(index, 1)
+      content.objects.splice(index, 1)
       this.update()
-      ASTRO.animation.shouldRender = true
+      animation.shouldRender = true
     }
     this.dialogs.objectDialog.close()
   })

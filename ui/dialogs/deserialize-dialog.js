@@ -1,17 +1,16 @@
-ASTRO.ui.dialogs.initDeserializeDialog = function () {
-  const deserializeDialog = new Dialog(document.getElementById('deserialize-dialog'))
+const Deserializer = require('../../serialization/deserializer.js')
+const Dialog = require('./dialog.js')
 
-  // get the input elements
-  const file = document.getElementById('deserialize-file')
-  const reader = new FileReader()
+const deserializeDialog = module.exports = new Dialog(document.getElementById('deserialize-dialog'))
 
-  document.getElementById('deserialize').addEventListener('click', () => {
-    reader.onload = function () {
-      Deserializer.deserialize(reader.result)
-      deserializeDialog.close()
-    }
-    reader.readAsText(file.files[0])
-  })
+// get the input elements
+const file = document.getElementById('deserialize-file')
+const reader = new FileReader()
 
-  return deserializeDialog
-}
+document.getElementById('deserialize').addEventListener('click', () => {
+  reader.onload = function () {
+    Deserializer.deserialize(reader.result)
+    deserializeDialog.close()
+  }
+  reader.readAsText(file.files[0])
+})

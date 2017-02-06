@@ -1,11 +1,20 @@
-ASTRO.ui = {
+const ASTRO = require('../astrosim.js')
+const {mainLoop} = ASTRO
+const content = require('../content/content.js')
+const Body = require('../content/body.js')
+const animation = require('../animation/animation.js')
+
+const ui = module.exports = ASTRO.ui = {
 
   selectedObject: null,
+
+  dialogs: require('./dialogs/init-dialogs.js'),
 
   initialize () {
     this.list = document.getElementById('object-list')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
-    this.addEventListeners()
+
+    require('./event-listeners.js').call(this)
     this.dialogs.initialize()
   },
   update () {
@@ -16,7 +25,7 @@ ASTRO.ui = {
       list.removeChild(list.firstChild)
     }
 
-    const {objects} = ASTRO.content
+    const {objects} = content
     for (index in objects) {
       const object = objects[index]
 
@@ -26,29 +35,28 @@ ASTRO.ui = {
       item.addEventListener('click', (e) => {
         if (e.target !== selectButton) {
           // open properties dialog
-          ASTRO.ui.pause()
-          ASTRO.content.editedObject = object
+          ui.pause()
+          content.editedObject = object
           const {objectDialog} = this.dialogs
           objectDialog.setValues()
           objectDialog.open()
         }
       })
 
-      const content = document.createElement('span')
-      content.textContent = 'Object #' + object.id
-      content.style.color = '#000000'
+      const contentElt = document.createElement('span')
+      // todo: bodies must have names!
+      contentElt.textContent = object.name || 'Object #' + object.id
+      contentElt.style.color = '#000000'
 
       const selectButton = document.createElement('button')
       selectButton.textContent = 'Center'
       selectButton.addEventListener('click', () => {
-        this.selectedObject = object
+        animation.selectedObject = object
         this.updateSelection()
-        if (!ASTRO.mainLoop.running) {
-          this.render()
-        }
+        animation.shouldRender = true
       })
 
-      item.appendChild(content)
+      item.appendChild(contentElt)
       item.appendChild(selectButton)
       list.appendChild(item)
     }
@@ -56,14 +64,14 @@ ASTRO.ui = {
     this.updateSelection()
   },
   updateSelection () {
-    const selection = this.selectedObject
-    if (selection !== null && !(selection instanceof Body)) {
+    const selection = animation.selectedObject
+    if (!(selection instanceof Body)) {
       return
     }
 
-    const index = ASTRO.content.objects.indexOf(selection)
+    const index = content.objects.indexOf(selection)
     if (index < 0) {
-      this.selectedObject = null
+      animation.selectedObject = null
     }
     const {list} = this
     Array.prototype.slice.call(list.children).forEach((item, itemIndex) => {
@@ -74,12 +82,13 @@ ASTRO.ui = {
       }
     })
   },
+
   pause () {
-    ASTRO.animation.pause()
+    animation.pause()
     this.togglePauseButton.textContent = 'Play'
   },
   unpause () {
-    ASTRO.animation.unpause()
+    animation.unpause()
     this.togglePauseButton.textContent = 'Pause'
   }
 

@@ -1,31 +1,35 @@
-ASTRO.ui.dialogs.initNewObjectDialog = function () {
-  const newObjectDialog = new Dialog(document.getElementById('new-object-dialog'))
+const animation = require('../../animation/animation.js')
+const Dialog = require('./dialog.js')
+const Vec2 = require('../../content/vec2.js')
+const Color = require('../../animation/color.js')
+const Body = require('../../content/body.js')
+const content = require('../../content/content.js')
 
-  // get the input elements
-  const positionX = document.getElementById('new-object-position-x')
-  const positionY = document.getElementById('new-object-position-y')
-  const velocityX = document.getElementById('new-object-velocity-x')
-  const velocityY = document.getElementById('new-object-velocity-y')
-  const mass = document.getElementById('new-object-mass')
-  const radius = document.getElementById('new-object-radius')
-  const color = document.getElementById('new-object-color')
+const newObjectDialog = module.exports = new Dialog(document.getElementById('new-object-dialog'))
 
-  // set the filter logic of the input elements
-  newObjectDialog.registerInput(positionX, positionY, velocityX, velocityY, mass, radius)
-  newObjectDialog.setFilterFunction(mass, this.validMassInput)
+// get the input elements
+const positionX = document.getElementById('new-object-position-x')
+const positionY = document.getElementById('new-object-position-y')
+const velocityX = document.getElementById('new-object-velocity-x')
+const velocityY = document.getElementById('new-object-velocity-y')
+const mass = document.getElementById('new-object-mass')
+const radius = document.getElementById('new-object-radius')
+const color = document.getElementById('new-object-color')
 
-  document.getElementById('new-object-submit').addEventListener('click', () => {
-    if (newObjectDialog.validate()) {
-      const position = Vec2.create(Number(positionX.value), Number(positionY.value))
-      const velocity = Vec2.create(Number(velocityX.value), Number(velocityY.value))
-      const object = new Body(position, Number(mass.value), Number(radius.value))
-      object.velocity = velocity
-      object.color = Color.fromHexString(color.value)
-      ASTRO.content.add(object)
-      newObjectDialog.close()
-      ASTRO.ui.shouldRender = true
-    }
-  })
+// set the filter logic of the input elements
+newObjectDialog.registerInput(positionX, positionY, velocityX, velocityY, mass, radius)
+newObjectDialog.setFilterFunction(mass, this.validMassInput)
 
-  return newObjectDialog
-}
+document.getElementById('new-object-submit').addEventListener('click', () => {
+  if (newObjectDialog.validate()) {
+    const position = Vec2.create(Number(positionX.value), Number(positionY.value))
+    const velocity = Vec2.create(Number(velocityX.value), Number(velocityY.value))
+    const object = new Body(position, Number(mass.value), Number(radius.value))
+    object.velocity = velocity
+    object.color = Color.fromHexString(color.value)
+    content.add(object)
+
+    newObjectDialog.close()
+    animation.shouldRender = true
+  }
+})

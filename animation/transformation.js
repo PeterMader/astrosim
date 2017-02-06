@@ -1,41 +1,44 @@
-ASTRO.animation.center = function (pos) {
+const animation = require('./animation.js')
+const Vec2 = require('../content/vec2.js')
+
+animation.center = function (pos) {
   Vec2.scale(pos, -this.ratio, this.translation)
 }
 
-ASTRO.animation.translate = function (x, y) {
-  this.translation[0] -= x
-  this.translation[1] -= y
+animation.translate = function (x, y) {
+  animation.translation[0] -= x
+  animation.translation[1] -= y
 
-  ASTRO.animation.shouldRender = true
+  animation.shouldRender = true
 }
 
-ASTRO.animation.scale = function (factor, centerX, centerY) {
-  const newRatio = this.ratio * factor
+animation.scale = function (factor, centerX, centerY) {
+  const newRatio = animation.ratio * factor
 
-  if (newRatio < this.MIN_SCALING) {
+  if (newRatio < animation.MIN_SCALING) {
     return
   }
 
-  if (newRatio > this.MAX_SCALING) {
+  if (newRatio > animation.MAX_SCALING) {
     return
   }
 
-  this.ratio = newRatio
+  animation.ratio = newRatio
 
   // zoom center point
-  const pX = ((centerX || 0) - this.translation[0]) / this.width
-  const pY = ((centerY || 0) - this.translation[1]) / this.height
+  const pX = ((centerX || 0) - animation.translation[0]) / animation.width
+  const pY = ((centerY || 0) - animation.translation[1]) / animation.height
 
   // update dimensions
-  this.width = canvas.width * newRatio
-  this.height = canvas.height * newRatio
+  animation.width = canvas.width * newRatio
+  animation.height = canvas.height * newRatio
 
   // translate view back to center point
-  const x = this.width * pX - centerX
-  const y = this.height * pY - centerY
+  const x = animation.width * pX - centerX
+  const y = animation.height * pY - centerY
 
-  this.translation[0] = -x
-  this.translation[1] = -y
+  animation.translation[0] = -x
+  animation.translation[1] = -y
 
-  ASTRO.animation.shouldRender = true
+  animation.shouldRender = true
 }
