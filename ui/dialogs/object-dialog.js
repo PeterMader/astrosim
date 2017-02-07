@@ -1,5 +1,6 @@
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
+const Color = require('../../animation/color.js')
 const Dialog = require('./dialog.js')
 const ui = require('../../ui/ui.js')
 

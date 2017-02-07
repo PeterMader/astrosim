@@ -15,9 +15,9 @@ viewportDialog.registerInput(translationX, translationY, scalingFactor)
 
 viewportDialog.setValues = () => {
   viewportDialog.set({
-    'translation-x': ui.translation[0].toExponential(3),
-    'translation-y': ui.translation[1].toExponential(3),
-    'scaling-factor': ui.ratio.toExponential(3)
+    'translation-x': animation.translation[0].toExponential(3),
+    'translation-y': animation.translation[1].toExponential(3),
+    'scaling-factor': animation.ratio.toExponential(3)
   })
 }
 

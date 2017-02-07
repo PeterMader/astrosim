@@ -45,9 +45,9 @@ animation.render = function () {
   // clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  if (this.selectedObject instanceof Body) {
+  if (animation.selectedObject instanceof Body) {
     // center the canvas at the selected object's center
-    this.center(Vec2.scale(this.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
+    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
   }
 
   if (objects.length > 0) {

@@ -5,7 +5,7 @@
     <title>AstroSim</title>
 
     <link rel="stylesheet" href="css/style.css">
-    <script src="build/astrosim.js" charset="utf-8"></script>
+    <script src="dist/astrosim.js" charset="utf-8"></script>
 
   </head>
   <body>
@@ -14,139 +14,145 @@
     <canvas id="canvas" width="300" height="300"></canvas>
 
     <aside id="side-bar">
-      <button type="button" id="toggle-pause-button">Pause</button>
-      <button type="button" id="deselect-button">Deselect</button>
-      <button type="button" id="open-viewport-dialog">Set viewport</button>
-      <button type="button" id="open-new-object-dialog">Create new object</button>
-      <button type="button" id="serialize-button">Save scene</button>
-      <button type="button" id="open-deserialize-button">Load saved scene</button>
+      <div class="main-buttonsdiv">
+        <div class="main-button" id="toggle-pause-button">Pause</div>
+        <div class="main-button" id="deselect-button">Deselect</div>
+        <div class="main-button" id="open-viewport-dialog">Set viewport</div>
+        <div class="main-button" id="open-new-object-dialog">Create new object</div>
+        <div class="main-button" id="serialize-button">Save scene</div>
+        <div class="main-button" id="open-deserialize-button">Load saved scene</div>
+      </div>
       <h3>Objects</h3>
       <ul id="object-list"></ul>
     </aside>
 
-    <div id="deserialize-dialog">
-      <h3>Load saved scene</h3>
-      <div class="item">
-        Location of saved scene:
-        <input name="file" id="deserialize-file" type="file">
-        <div class="description">The location of the saved file.</div>
-      </div>
-      <div class="item">
-        <button type="button" id="deserialize">Load scene</button>
-        <button type="button" id="cancel-deserialize">Cancel</button>
-      </div>
-    </div>
+    <div class="dialog-container">
 
-    <div id="viewport-dialog">
-      <h3>Viewport settings</h3>
-      <div class="item">
-        Translation in x direction:
-        <input name="translation-x" value="0" id="viewport-translation-x">
-        <div class="description">The translation of the viewport in x direction in pixels. The value 0 means no translation, a positive value means translation to the right, a negative value means translation to the left.</div>
+      <div id="deserialize-dialog">
+        <h3>Load saved scene</h3>
+        <div class="item">
+          Location of saved scene:
+          <input name="file" id="deserialize-file" type="file">
+          <div class="description">The location of the saved file.</div>
+        </div>
+        <div class="item">
+          <button type="button" id="deserialize">Load scene</button>
+          <button type="button" id="cancel-deserialize">Cancel</button>
+        </div>
       </div>
-      <div class="item">
-        Translation in y direction:
-        <input name="translation-y" value="0" id="viewport-translation-y">
-        <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
-      </div>
-      <div class="item">
-        Scaling factor:
-        <input name="scaling-factor" value="0" id="viewport-scaling-factor">
-        <div class="description">The scaling factor of the viewport.</div>
-      </div>
-      <div class="item">
-        <button type="button" id="viewport-submit">Done</button>
-        <button type="button" id="center-viewport">Center viewport</button>
-        <button type="button" id="viewport-cancel">Cancel</button>
-      </div>
-    </div>
 
-    <div id="object-dialog">
-      <h3>Object settings</h3>
-      <div class="item">
-        Position in x direction:
-        <input name="position-x" value="0" id="object-position-x">
-        <div class="description">The position of the object in x direction.</div>
+      <div id="viewport-dialog">
+        <h3>Viewport settings</h3>
+        <div class="item">
+          Translation in x direction:
+          <input name="translation-x" value="0" id="viewport-translation-x">
+          <div class="description">The translation of the viewport in x direction in pixels. The value 0 means no translation, a positive value means translation to the right, a negative value means translation to the left.</div>
+        </div>
+        <div class="item">
+          Translation in y direction:
+          <input name="translation-y" value="0" id="viewport-translation-y">
+          <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
+        </div>
+        <div class="item">
+          Scaling factor:
+          <input name="scaling-factor" value="0" id="viewport-scaling-factor">
+          <div class="description">The scaling factor of the viewport.</div>
+        </div>
+        <div class="item">
+          <button type="button" id="viewport-submit">Done</button>
+          <button type="button" id="center-viewport">Center viewport</button>
+          <button type="button" id="viewport-cancel">Cancel</button>
+        </div>
       </div>
-      <div class="item">
-        Position in y direction:
-        <input name="position-y" value="0" id="object-position-y">
-        <div class="description">The position of the object in y direction.</div>
-      </div>
-      <div class="item">
-        Velocity in x direction:
-        <input name="velocity-x" value="0" id="object-velocity-x">
-        <div class="description">The velocity of the object in x direction.</div>
-      </div>
-      <div class="item">
-        Velocity in y direction:
-        <input name="velocity-y" value="0" id="object-velocity-y">
-        <div class="description">The velocity of the object in y direction. </div>
-      </div>
-      <div class="item">
-        Mass:
-        <input name="mass" value="0" id="object-mass">
-        <div class="description">The object's mass.</div>
-      </div>
-      <div class="item">
-        Radius:
-        <input name="radius" value="0" id="object-radius">
-        <div class="description">The object's radius.</div>
-      </div>
-      <div class="item">
-        Color:
-        <input name="color" type="color" value="#FFFFFF" id="object-color">
-        <div class="description">The object's color.</div>
-      </div>
-      <div class="item">
-        <button type="button" id="object-submit">Done</button>
-        <button type="button" id="object-delete">Delete</button>
-        <button type="button" id="object-cancel">Cancel</button>
-      </div>
-    </div>
 
-    <div id="new-object-dialog">
-      <h3>Create new object</h3>
-      <div class="item">
-        Position in x direction:
-        <input name="position-x" value="0" id="new-object-position-x">
-        <div class="description">The position of the object in x direction.</div>
+      <div id="object-dialog">
+        <h3>Object settings</h3>
+        <div class="item">
+          Position in x direction:
+          <input name="position-x" value="0" id="object-position-x">
+          <div class="description">The position of the object in x direction.</div>
+        </div>
+        <div class="item">
+          Position in y direction:
+          <input name="position-y" value="0" id="object-position-y">
+          <div class="description">The position of the object in y direction.</div>
+        </div>
+        <div class="item">
+          Velocity in x direction:
+          <input name="velocity-x" value="0" id="object-velocity-x">
+          <div class="description">The velocity of the object in x direction.</div>
+        </div>
+        <div class="item">
+          Velocity in y direction:
+          <input name="velocity-y" value="0" id="object-velocity-y">
+          <div class="description">The velocity of the object in y direction. </div>
+        </div>
+        <div class="item">
+          Mass:
+          <input name="mass" value="0" id="object-mass">
+          <div class="description">The object's mass.</div>
+        </div>
+        <div class="item">
+          Radius:
+          <input name="radius" value="0" id="object-radius">
+          <div class="description">The object's radius.</div>
+        </div>
+        <div class="item">
+          Color:
+          <input name="color" type="color" value="#FFFFFF" id="object-color">
+          <div class="description">The object's color.</div>
+        </div>
+        <div class="item">
+          <button type="button" id="object-submit">Done</button>
+          <button type="button" id="object-delete">Delete</button>
+          <button type="button" id="object-cancel">Cancel</button>
+        </div>
       </div>
-      <div class="item">
-        Position in y direction:
-        <input name="position-y" value="0" id="new-object-position-y">
-        <div class="description">The position of the object in y direction.</div>
+
+      <div id="new-object-dialog">
+        <h3>Create new object</h3>
+        <div class="item">
+          Position in x direction:
+          <input name="position-x" value="0" id="new-object-position-x">
+          <div class="description">The position of the object in x direction.</div>
+        </div>
+        <div class="item">
+          Position in y direction:
+          <input name="position-y" value="0" id="new-object-position-y">
+          <div class="description">The position of the object in y direction.</div>
+        </div>
+        <div class="item">
+          Velocity in x direction:
+          <input name="velocity-x" value="0" id="new-object-velocity-x">
+          <div class="description">The velocity of the object in x direction.</div>
+        </div>
+        <div class="item">
+          Velocity in y direction:
+          <input name="velocity-y" value="0" id="new-object-velocity-y">
+          <div class="description">The velocity of the object in y direction. </div>
+        </div>
+        <div class="item">
+          Mass:
+          <input name="mass" value="0" id="new-object-mass">
+          <div class="description">The object's mass.</div>
+        </div>
+        <div class="item">
+          Radius:
+          <input name="radius" value="0" id="new-object-radius">
+          <div class="description">The object's radius.</div>
+        </div>
+        <div class="item">
+          Color:
+          <input type="color" value="#FFFFFF" id="new-object-color">
+          <div class="description">The object's color.</div>
+        </div>
+        <div class="item">
+          <button type="button" id="new-object-submit">Create new object</button>
+          <button type="button" id="new-object-cancel">Cancel</button>
+        </div>
       </div>
-      <div class="item">
-        Velocity in x direction:
-        <input name="velocity-x" value="0" id="new-object-velocity-x">
-        <div class="description">The velocity of the object in x direction.</div>
-      </div>
-      <div class="item">
-        Velocity in y direction:
-        <input name="velocity-y" value="0" id="new-object-velocity-y">
-        <div class="description">The velocity of the object in y direction. </div>
-      </div>
-      <div class="item">
-        Mass:
-        <input name="mass" value="0" id="new-object-mass">
-        <div class="description">The object's mass.</div>
-      </div>
-      <div class="item">
-        Radius:
-        <input name="radius" value="0" id="new-object-radius">
-        <div class="description">The object's radius.</div>
-      </div>
-      <div class="item">
-        Color:
-        <input type="color" value="#FFFFFF" id="new-object-color">
-        <div class="description">The object's color.</div>
-      </div>
-      <div class="item">
-        <button type="button" id="new-object-submit">Create new object</button>
-        <button type="button" id="new-object-cancel">Cancel</button>
-      </div>
-    </div>
+
+    </div> <!-- <div class="dialog-container"> -->
 
   </body>
 </html>

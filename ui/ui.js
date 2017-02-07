@@ -65,7 +65,7 @@ const ui = module.exports = ASTRO.ui = {
   },
   updateSelection () {
     const selection = animation.selectedObject
-    if (!(selection instanceof Body)) {
+    if (selection !== null && !(selection instanceof Body)) {
       return
     }
 

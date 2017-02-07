@@ -4,8 +4,7 @@
   "description": "A simulation of the movement of the planets.",
   "main": "astrosim.js",
   "scripts": {
-    "build-debug": "browserify astrosim.js -o build/astrosim.js",
-    "build-release": "browserify astrosim.js | uglifyjs > build/astrosim.min.js"
+    "build": "browserify astrosim.js -o dist/astrosim.js"
   },
   "keywords": [
     "simulation",

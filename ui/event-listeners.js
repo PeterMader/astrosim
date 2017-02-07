@@ -12,7 +12,7 @@ module.exports = function () {
     Serializer.serialize(data)
   })
   document.getElementById('deselect-button').addEventListener('click', () => {
-    this.selectedObject = null
+    animation.selectedObject = null
     this.updateSelection()
   })
   this.togglePauseButton.addEventListener('click', () => {
