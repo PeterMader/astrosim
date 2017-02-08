@@ -10,6 +10,7 @@ module.exports = class Body {
     this.mass = mass || 0
     this.radius = radius
     this.color = new Color()
+    this.name = name
   }
 
   applyForce (force) {
@@ -26,7 +27,8 @@ module.exports = class Body {
       velocityY: this.velocity[1],
       mass: this.mass,
       radius: this.radius,
-      color: this.color.hexString()
+      color: this.color.hexString(),
+      name: this.name
     }
   }
 
@@ -96,10 +98,15 @@ module.exports = class Body {
     if (!data) {
       return null
     }
-    const newBody = new Body(Vec2.create(
-      typeof data.positionX === 'number' ? data.positionX : 0,
-      typeof data.positionY === 'number' ? data.positionY : 0
-    ), typeof data.mass === 'number' ? data.mass : 1000, typeof data.radius === 'number' ? data.radius : 1000)
+    const newBody = new Body(
+      Vec2.create(
+        typeof data.positionX === 'number' ? data.positionX : 0,
+        typeof data.positionY === 'number' ? data.positionY : 0
+      ),
+      typeof data.mass === 'number' ? data.mass : 1000,
+      typeof data.radius === 'number' ? data.radius : 1000,
+      typeof data.name === 'string' ? data.name : 'Object'
+    )
     newBody.color = Color.fromHexString(data.color)
     newBody.velocity[0] = typeof data.velocityX === 'number' ? data.velocityX : 0
     newBody.velocity[1] = typeof data.velocityY === 'number' ? data.velocityY : 0

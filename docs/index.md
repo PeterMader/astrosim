@@ -11,7 +11,15 @@ AstroSim is based on JavaScript and runs in the browser, which means that you do
 Everything is measured in metric units: distance in meters, mass in kilograms. The time is accelerated, otherwise realistic simulations would take very much time.
 
 ### Objects
-An object has a position in space, a velocity, a mass, a radius and a color. When creating a new object, you can specify these properties. You can also edit them later to see what would happen under other circumstances.
+An object has
+* a name,
+* a position in space,
+* a velocity,
+* a mass,
+* a radius and
+* a color.
+
+When creating a new object, you can specify these properties. You can also edit them later to see what would happen under other circumstances.
 
 ### Gravity
 The force between two objects a and b, which have a distance r between them, is calculated like such:

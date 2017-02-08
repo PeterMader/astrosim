@@ -74,4 +74,8 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-closed')
     this.opened = false
   }
+  static greaterThanZero (input, value) {
+    let floatValue = Number(value)
+    return floatValue > 0
+  }
 }

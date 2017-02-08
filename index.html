@@ -16,14 +16,13 @@
     <aside id="side-bar">
       <div class="main-buttonsdiv">
         <div class="main-button" id="toggle-pause-button">Pause</div>
-        <div class="main-button" id="deselect-button">Deselect</div>
-        <div class="main-button" id="open-viewport-dialog">Set viewport</div>
+        <div class="main-button" id="open-settings-dialog">Settings</div>
         <div class="main-button" id="open-new-object-dialog">Create new object</div>
         <div class="main-button" id="serialize-button">Save scene</div>
         <div class="main-button" id="open-deserialize-button">Load saved scene</div>
       </div>
       <h3>Objects</h3>
-      <ul id="object-list"></ul>
+      <div id="object-list"></div>
     </aside>
 
     <div class="dialog-container">
@@ -41,32 +40,44 @@
         </div>
       </div>
 
-      <div id="viewport-dialog">
-        <h3>Viewport settings</h3>
+      <div id="settings-dialog">
+        <h3>Settings</h3>
+        <h5>Viewport settings</h5>
+        <button type="button" id="center-viewport">Center viewport</button>
         <div class="item">
           Translation in x direction:
-          <input name="translation-x" value="0" id="viewport-translation-x">
+          <input name="translation-x" value="0" id="settings-translation-x">
           <div class="description">The translation of the viewport in x direction in pixels. The value 0 means no translation, a positive value means translation to the right, a negative value means translation to the left.</div>
         </div>
         <div class="item">
           Translation in y direction:
-          <input name="translation-y" value="0" id="viewport-translation-y">
+          <input name="translation-y" value="0" id="settings-translation-y">
           <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
         </div>
         <div class="item">
           Scaling factor:
-          <input name="scaling-factor" value="0" id="viewport-scaling-factor">
+          <input name="scaling-factor" value="0" id="settings-scaling-factor">
           <div class="description">The scaling factor of the viewport.</div>
         </div>
+        <h5>Content settings</h5>
         <div class="item">
-          <button type="button" id="viewport-submit">Done</button>
-          <button type="button" id="center-viewport">Center viewport</button>
-          <button type="button" id="viewport-cancel">Cancel</button>
+          Time factor:
+          <input name="time-factor" value="2.62974391e+6" id="settings-time-factor">
+          <div class="description">The factor of the time is accelerated. One year has 31556927 seconds; the default value means one simulated month per real second.</div>
+        </div>
+        <div class="item">
+          <button type="button" id="settings-submit">Done</button>
+          <button type="button" id="settings-cancel">Cancel</button>
         </div>
       </div>
 
       <div id="object-dialog">
         <h3>Object settings</h3>
+        <div class="item">
+          Name:
+          <input name="name" value="Object" id="object-name">
+          <div class="description">The name of the object.</div>
+        </div>
         <div class="item">
           Position in x direction:
           <input name="position-x" value="0" id="object-position-x">
@@ -111,6 +122,11 @@
 
       <div id="new-object-dialog">
         <h3>Create new object</h3>
+        <div class="item">
+          Name:
+          <input name="name" value="Object" id="new-object-name">
+          <div class="description">The name of the object.</div>
+        </div>
         <div class="item">
           Position in x direction:
           <input name="position-x" value="0" id="new-object-position-x">

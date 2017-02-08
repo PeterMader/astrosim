@@ -13,6 +13,8 @@ aside#side-bar {
   width: 20%;
   background-color: #FFFFFF;
   z-index: 2;
+  overflow-y: auto;
+  max-height: 100vh;
 }
 
 #canvas {
@@ -24,12 +26,18 @@ aside#side-bar {
 }
 
 .selected-object {
-  font-weight: bold;
+  background: #EEEEEE;
+}
+
+.selected-object button {
+  padding: 5px 9px 3px 11px;
+  background: #1255AA;
 }
 
 .dialog {
   overflow-y: auto;
   z-index: 3;
+  border-radius: 3px;
 }
 
 .dialog-open {
@@ -77,8 +85,19 @@ h3 {
 }
 
 .object-list-item {
-  height: 30px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+}
+
+.object-list-item-before {
+  height: 10px;
+  width: 10px;
+  display: inline-block;
+  margin-right: 5px;
+  border-radius: 5px;
 }
 
 button {
@@ -96,7 +115,7 @@ button:hover {
 }
 
 input {
-  border: 1px solid #666666;
+  border: 1px solid #555555;
   padding: 3px;
 }
 
@@ -111,7 +130,7 @@ input:focus {
 .main-button {
   border-bottom: 1px solid #EEEEEE;
   cursor: pointer;
-  color: #444444;
+  color: #555555;
   font-size: 90%;
   padding: 10px;
 }

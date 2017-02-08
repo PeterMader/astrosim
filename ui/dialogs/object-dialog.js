@@ -7,6 +7,7 @@ const ui = require('../../ui/ui.js')
 const objectDialog = module.exports = new Dialog(document.getElementById('object-dialog'))
 
 // get the input elements
+const name = document.getElementById('object-name')
 const positionX = document.getElementById('object-position-x')
 const positionY = document.getElementById('object-position-y')
 const velocityX = document.getElementById('object-velocity-x')
@@ -16,14 +17,15 @@ const radius = document.getElementById('object-radius')
 const color = document.getElementById('object-color')
 
 // set the filter logic of the input elements
-objectDialog.registerInput(positionX, positionY, velocityX, velocityY, mass, radius)
-objectDialog.setFilterFunction(mass, this.validMassInput)
-objectDialog.setFilterFunction(radius, this.validMassInput)
+objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
+objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
+objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
 objectDialog.setValues = () => {
   const object = content.editedObject
   color.value = object.color.hexString()
   objectDialog.set({
+    'name': object.name || ('Object #' + object.id),
     'position-x': object.position[0].toExponential(3),
     'position-y': object.position[1].toExponential(3),
     'velocity-x': object.velocity[0].toExponential(3),
@@ -36,6 +38,7 @@ objectDialog.setValues = () => {
 document.getElementById('object-submit').addEventListener('click', () => {
   if (objectDialog.validate()) {
     const object = content.editedObject
+    object.name = name.value
     object.position[0] = Number(positionX.value)
     object.position[1] = Number(positionY.value)
 

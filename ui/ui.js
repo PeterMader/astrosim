@@ -29,8 +29,7 @@ const ui = module.exports = ASTRO.ui = {
     for (index in objects) {
       const object = objects[index]
 
-      const item = document.createElement('li')
-      item.style.color = object.color.hexString()
+      const item = document.createElement('div')
       item.classList.add('object-list-item')
       item.addEventListener('click', (e) => {
         if (e.target !== selectButton) {
@@ -43,15 +42,22 @@ const ui = module.exports = ASTRO.ui = {
         }
       })
 
+      const beforeItem = document.createElement('div')
+      beforeItem.classList.add('object-list-item-before')
+      beforeItem.style.backgroundColor = object.color.hexString()
+
       const contentElt = document.createElement('span')
-      // todo: bodies must have names!
-      contentElt.textContent = object.name || 'Object #' + object.id
-      contentElt.style.color = '#000000'
+      contentElt.appendChild(beforeItem)
+      contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
       const selectButton = document.createElement('button')
       selectButton.textContent = 'Center'
       selectButton.addEventListener('click', () => {
-        animation.selectedObject = object
+        if (animation.selectedObject === object) {
+          animation.selectedObject = null
+        } else {
+          animation.selectedObject = object
+        }
         this.updateSelection()
         animation.shouldRender = true
       })

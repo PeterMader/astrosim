@@ -11,10 +11,6 @@ module.exports = function () {
     const data = Serializer.createData()
     Serializer.serialize(data)
   })
-  document.getElementById('deselect-button').addEventListener('click', () => {
-    animation.selectedObject = null
-    this.updateSelection()
-  })
   this.togglePauseButton.addEventListener('click', () => {
     if (mainLoop.running) {
       ui.pause()
@@ -42,10 +38,10 @@ module.exports = function () {
   document.getElementById('new-object-cancel').addEventListener('click', () => {
     this.dialogs.newObjectDialog.close()
   })
-  document.getElementById('open-viewport-dialog').addEventListener('click', () => {
-    const {viewportDialog} = this.dialogs
-    viewportDialog.setValues()
-    viewportDialog.open()
+  document.getElementById('open-settings-dialog').addEventListener('click', () => {
+    const {settingsDialog} = this.dialogs
+    settingsDialog.setValues()
+    settingsDialog.open()
   })
   document.getElementById('open-deserialize-button').addEventListener('click', () => {
     this.dialogs.deserializeDialog.open()
@@ -53,7 +49,7 @@ module.exports = function () {
   document.getElementById('cancel-deserialize').addEventListener('click', () => {
     this.dialogs.deserializeDialog.close()
   })
-  document.getElementById('viewport-cancel').addEventListener('click', () => {
-    this.dialogs.viewportDialog.close()
+  document.getElementById('settings-cancel').addEventListener('click', () => {
+    this.dialogs.settingsDialog.close()
   })
 }

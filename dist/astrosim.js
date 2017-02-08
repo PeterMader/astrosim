@@ -378,6 +378,7 @@ module.exports = class Body {
     this.mass = mass || 0
     this.radius = radius
     this.color = new Color()
+    this.name = name
   }
 
   applyForce (force) {
@@ -394,7 +395,8 @@ module.exports = class Body {
       velocityY: this.velocity[1],
       mass: this.mass,
       radius: this.radius,
-      color: this.color.hexString()
+      color: this.color.hexString(),
+      name: this.name
     }
   }
 
@@ -464,10 +466,15 @@ module.exports = class Body {
     if (!data) {
       return null
     }
-    const newBody = new Body(Vec2.create(
-      typeof data.positionX === 'number' ? data.positionX : 0,
-      typeof data.positionY === 'number' ? data.positionY : 0
-    ), typeof data.mass === 'number' ? data.mass : 1000, typeof data.radius === 'number' ? data.radius : 1000)
+    const newBody = new Body(
+      Vec2.create(
+        typeof data.positionX === 'number' ? data.positionX : 0,
+        typeof data.positionY === 'number' ? data.positionY : 0
+      ),
+      typeof data.mass === 'number' ? data.mass : 1000,
+      typeof data.radius === 'number' ? data.radius : 1000,
+      typeof data.name === 'string' ? data.name : 'Object'
+    )
     newBody.color = Color.fromHexString(data.color)
     newBody.velocity[0] = typeof data.velocityX === 'number' ? data.velocityX : 0
     newBody.velocity[1] = typeof data.velocityY === 'number' ? data.velocityY : 0
@@ -667,11 +674,12 @@ module.exports = class Deserializer {
       content.objects = []
       content.currentId = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
-      content.selectedObject = Body.fromSerialized(data.content.selectedObject)
+      content.TIME_FACTOR = data.content.timeFactor
 
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
       animation.ratio = data.viewport.ratio
+      animation.selectedObject = Body.fromSerialized(data.content.selectedObject)
 
       animation.shouldRender = true
       ui.update()
@@ -688,6 +696,7 @@ module.exports = class Deserializer {
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&
       (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
       (typeof data.content === 'object') &&
+      (typeof data.content.timeFactor === 'number') &&
       (typeof data.content.selectedObject === 'object') &&
       (Array.isArray(data.content.objects)) &&
       data.content.objects.filter((item) => typeof item === 'object')
@@ -826,32 +835,29 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-closed')
     this.opened = false
   }
-}
-
-},{}],15:[function(require,module,exports){
-module.exports = {
-
-  viewportDialog: null,
-  objectDialog: null,
-  newObjectDialog: null,
-  deserializeDialog: null,
-
-  initialize () {
-    this.viewportDialog = require('./viewport-dialog.js')
-    this.objectDialog = require('./object-dialog.js')
-    this.newObjectDialog = require('./new-object-dialog.js')
-    this.deserializeDialog = require('./deserialize-dialog.js')
-  },
-  validPositionInput (input, value) {
-    return true
-  },
-  validMassInput (input, value) {
+  static greaterThanZero (input, value) {
     let floatValue = Number(value)
     return floatValue > 0
   }
 }
 
-},{"./deserialize-dialog.js":13,"./new-object-dialog.js":16,"./object-dialog.js":17,"./viewport-dialog.js":18}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
+module.exports = {
+
+  settingsDialog: null,
+  objectDialog: null,
+  newObjectDialog: null,
+  deserializeDialog: null,
+
+  initialize () {
+    this.settingsDialog = require('./settings-dialog.js')
+    this.objectDialog = require('./object-dialog.js')
+    this.newObjectDialog = require('./new-object-dialog.js')
+    this.deserializeDialog = require('./deserialize-dialog.js')
+  }
+}
+
+},{"./deserialize-dialog.js":13,"./new-object-dialog.js":16,"./object-dialog.js":17,"./settings-dialog.js":18}],16:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -862,6 +868,7 @@ const content = require('../../content/content.js')
 const newObjectDialog = module.exports = new Dialog(document.getElementById('new-object-dialog'))
 
 // get the input elements
+const name = document.getElementById('new-object-name')
 const positionX = document.getElementById('new-object-position-x')
 const positionY = document.getElementById('new-object-position-y')
 const velocityX = document.getElementById('new-object-velocity-x')
@@ -871,14 +878,15 @@ const radius = document.getElementById('new-object-radius')
 const color = document.getElementById('new-object-color')
 
 // set the filter logic of the input elements
-newObjectDialog.registerInput(positionX, positionY, velocityX, velocityY, mass, radius)
-newObjectDialog.setFilterFunction(mass, this.validMassInput)
+newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
+newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
+newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 
 document.getElementById('new-object-submit').addEventListener('click', () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))
     const velocity = Vec2.create(Number(velocityX.value), Number(velocityY.value))
-    const object = new Body(position, Number(mass.value), Number(radius.value))
+    const object = new Body(position, Number(mass.value), Number(radius.value), name.value.toString())
     object.velocity = velocity
     object.color = Color.fromHexString(color.value)
     content.add(object)
@@ -898,6 +906,7 @@ const ui = require('../../ui/ui.js')
 const objectDialog = module.exports = new Dialog(document.getElementById('object-dialog'))
 
 // get the input elements
+const name = document.getElementById('object-name')
 const positionX = document.getElementById('object-position-x')
 const positionY = document.getElementById('object-position-y')
 const velocityX = document.getElementById('object-velocity-x')
@@ -907,14 +916,15 @@ const radius = document.getElementById('object-radius')
 const color = document.getElementById('object-color')
 
 // set the filter logic of the input elements
-objectDialog.registerInput(positionX, positionY, velocityX, velocityY, mass, radius)
-objectDialog.setFilterFunction(mass, this.validMassInput)
-objectDialog.setFilterFunction(radius, this.validMassInput)
+objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
+objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
+objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
 objectDialog.setValues = () => {
   const object = content.editedObject
   color.value = object.color.hexString()
   objectDialog.set({
+    'name': object.name || ('Object #' + object.id),
     'position-x': object.position[0].toExponential(3),
     'position-y': object.position[1].toExponential(3),
     'velocity-x': object.velocity[0].toExponential(3),
@@ -927,6 +937,7 @@ objectDialog.setValues = () => {
 document.getElementById('object-submit').addEventListener('click', () => {
   if (objectDialog.validate()) {
     const object = content.editedObject
+    object.name = name.value
     object.position[0] = Number(positionX.value)
     object.position[1] = Number(positionY.value)
 
@@ -948,21 +959,25 @@ const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
 const ui = require('../../ui/ui.js')
 
-const viewportDialog = module.exports = new Dialog(document.getElementById('viewport-dialog'))
+const settingsDialog = module.exports = new Dialog(document.getElementById('settings-dialog'))
 
 // get the input elements
-const translationX = document.getElementById('viewport-translation-x')
-const translationY = document.getElementById('viewport-translation-y')
-const scalingFactor = document.getElementById('viewport-scaling-factor')
+const translationX = document.getElementById('settings-translation-x')
+const translationY = document.getElementById('settings-translation-y')
+const scalingFactor = document.getElementById('settings-scaling-factor')
+const timeFactor = document.getElementById('settings-time-factor')
 
 // set the filter logic of the input elements
-viewportDialog.registerInput(translationX, translationY, scalingFactor)
+settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFactor)
+settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
+settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
-viewportDialog.setValues = () => {
-  viewportDialog.set({
+settingsDialog.setValues = () => {
+  settingsDialog.set({
     'translation-x': animation.translation[0].toExponential(3),
     'translation-y': animation.translation[1].toExponential(3),
-    'scaling-factor': animation.ratio.toExponential(3)
+    'scaling-factor': animation.ratio.toExponential(3),
+    'time-factor': content.TIME_FACTOR.toExponential(3)
   })
 }
 
@@ -970,15 +985,16 @@ document.getElementById('center-viewport').addEventListener('click', () => {
   animation.translation[0] = 0
   animation.translation[1] = 0
   ui.selectedObject = null
-  viewportDialog.setValues()
+  settingsDialog.setValues()
 })
 
-document.getElementById('viewport-submit').addEventListener('click', () => {
-  if (viewportDialog.validate()) {
+document.getElementById('settings-submit').addEventListener('click', () => {
+  if (settingsDialog.validate()) {
     animation.translation[0] = Number(translationX.value)
     animation.translation[1] = Number(translationY.value)
     animation.ratio = Number(scalingFactor.value)
-    viewportDialog.close()
+    settingsDialog.close()
+    content.TIME_FACTOR = Number(timeFactor.value)
     animation.shouldRender = true
   }
 })
@@ -996,10 +1012,6 @@ module.exports = function () {
   document.getElementById('serialize-button').addEventListener('click', () => {
     const data = Serializer.createData()
     Serializer.serialize(data)
-  })
-  document.getElementById('deselect-button').addEventListener('click', () => {
-    animation.selectedObject = null
-    this.updateSelection()
   })
   this.togglePauseButton.addEventListener('click', () => {
     if (mainLoop.running) {
@@ -1028,10 +1040,10 @@ module.exports = function () {
   document.getElementById('new-object-cancel').addEventListener('click', () => {
     this.dialogs.newObjectDialog.close()
   })
-  document.getElementById('open-viewport-dialog').addEventListener('click', () => {
-    const {viewportDialog} = this.dialogs
-    viewportDialog.setValues()
-    viewportDialog.open()
+  document.getElementById('open-settings-dialog').addEventListener('click', () => {
+    const {settingsDialog} = this.dialogs
+    settingsDialog.setValues()
+    settingsDialog.open()
   })
   document.getElementById('open-deserialize-button').addEventListener('click', () => {
     this.dialogs.deserializeDialog.open()
@@ -1039,8 +1051,8 @@ module.exports = function () {
   document.getElementById('cancel-deserialize').addEventListener('click', () => {
     this.dialogs.deserializeDialog.close()
   })
-  document.getElementById('viewport-cancel').addEventListener('click', () => {
-    this.dialogs.viewportDialog.close()
+  document.getElementById('settings-cancel').addEventListener('click', () => {
+    this.dialogs.settingsDialog.close()
   })
 }
 
@@ -1076,8 +1088,7 @@ const ui = module.exports = ASTRO.ui = {
     for (index in objects) {
       const object = objects[index]
 
-      const item = document.createElement('li')
-      item.style.color = object.color.hexString()
+      const item = document.createElement('div')
       item.classList.add('object-list-item')
       item.addEventListener('click', (e) => {
         if (e.target !== selectButton) {
@@ -1090,15 +1101,22 @@ const ui = module.exports = ASTRO.ui = {
         }
       })
 
+      const beforeItem = document.createElement('div')
+      beforeItem.classList.add('object-list-item-before')
+      beforeItem.style.backgroundColor = object.color.hexString()
+
       const contentElt = document.createElement('span')
-      // todo: bodies must have names!
-      contentElt.textContent = object.name || 'Object #' + object.id
-      contentElt.style.color = '#000000'
+      contentElt.appendChild(beforeItem)
+      contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
       const selectButton = document.createElement('button')
       selectButton.textContent = 'Center'
       selectButton.addEventListener('click', () => {
-        animation.selectedObject = object
+        if (animation.selectedObject === object) {
+          animation.selectedObject = null
+        } else {
+          animation.selectedObject = object
+        }
         this.updateSelection()
         animation.shouldRender = true
       })
