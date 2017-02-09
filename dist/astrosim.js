@@ -17,6 +17,7 @@ const animation = module.exports = ASTRO.animation = {
   ctx: null,
 
   shouldRender: true,
+  drawHistory: true,
 
   animationLoop: new Loop(() => {
     if (mainLoop.running || animation.shouldRender) {
@@ -278,18 +279,50 @@ animation.render = function () {
     canvasCenter[0] = canvas.width / 2
     canvasCenter[1] = canvas.height / 2
     const pos = content.temp2
+    const offsetX = this.translation[0] + canvasCenter[0]
+    const offsetY = this.translation[1] + canvasCenter[1]
+    const factor = this.ratio / content.METERS_PER_PIXEL
 
     let index
     // walk over each object and draw it
     for (index in objects) {
       const object = objects[index]
-      Vec2.scale(object.position, this.ratio / content.METERS_PER_PIXEL, pos)
-      Vec2.add(pos, this.translation, pos)
-      Vec2.add(pos, canvasCenter, pos)
+      Vec2.scale(object.position, factor, pos)
+      pos[0] += offsetX
+      pos[1] += offsetY
 
       // calculate the circle's radius
-      let radius = object.radius * this.ratio
-      this.drawCircle(pos[0], pos[1], Math.max(radius / content.METERS_PER_PIXEL, 3), object.color.hexString())
+      const radius = object.radius * this.ratio
+      const color = object.color.hexString()
+      this.drawCircle(pos[0], pos[1], Math.max(radius / content.METERS_PER_PIXEL, 3), color)
+
+      if (animation.drawHistory) {
+        // draw the object's trace
+        ctx.beginPath()
+        ctx.strokeStyle = color
+        let i
+        const {history} = object
+        if (object.historyOverflow) {
+          // start at the index
+          const length = history.length
+          ctx.moveTo(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetX)
+          if (object.historyIndex % 40 === 0) {
+            console.log(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetX)
+          }
+          for (i = object.historyIndex + 2; i < length; i += 2) {
+            ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
+          }
+          for (i = 0; i < object.historyIndex; i += 2) {
+            ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
+          }
+        } else {
+          ctx.moveTo(history[0] * factor + offsetX, history[1] * factor + offsetY)
+          for (i = 2; i < object.historyIndex; i += 2) {
+            ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
+          }
+        }
+        ctx.stroke()
+      }
     }
   }
 
@@ -379,6 +412,11 @@ module.exports = class Body {
     this.radius = radius
     this.color = new Color()
     this.name = name
+
+    // remember the last 50 positions
+    this.history = new Float32Array(100)
+    this.historyIndex = 0
+    this.historyOverflow = false
   }
 
   applyForce (force) {
@@ -404,6 +442,14 @@ module.exports = class Body {
     // move object by adding its velocity to its position
     this.position[0] += this.velocity[0] * deltaTime
     this.position[1] += this.velocity[1] * deltaTime
+
+    this.history[this.historyIndex] = this.position[0]
+    this.history[this.historyIndex + 1] = this.position[1]
+    this.historyIndex += 2
+    if (this.historyIndex >= this.history.length) {
+      this.historyIndex = 0
+      this.historyOverflow = true
+    }
   }
 
   update (deltaTime) {

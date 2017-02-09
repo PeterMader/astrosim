@@ -11,6 +11,11 @@ module.exports = class Body {
     this.radius = radius
     this.color = new Color()
     this.name = name
+
+    // remember the last 50 positions
+    this.history = new Float32Array(100)
+    this.historyIndex = 0
+    this.historyOverflow = false
   }
 
   applyForce (force) {
@@ -36,6 +41,14 @@ module.exports = class Body {
     // move object by adding its velocity to its position
     this.position[0] += this.velocity[0] * deltaTime
     this.position[1] += this.velocity[1] * deltaTime
+
+    this.history[this.historyIndex] = this.position[0]
+    this.history[this.historyIndex + 1] = this.position[1]
+    this.historyIndex += 2
+    if (this.historyIndex >= this.history.length) {
+      this.historyIndex = 0
+      this.historyOverflow = true
+    }
   }
 
   update (deltaTime) {

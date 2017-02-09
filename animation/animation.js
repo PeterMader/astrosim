@@ -16,6 +16,7 @@ const animation = module.exports = ASTRO.animation = {
   ctx: null,
 
   shouldRender: true,
+  drawHistory: true,
 
   animationLoop: new Loop(() => {
     if (mainLoop.running || animation.shouldRender) {
