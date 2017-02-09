@@ -46,11 +46,9 @@ const animation = module.exports = ASTRO.animation = {
     this.animationLoop.start()
   },
   pause () {
-    console.log('Pause')
     mainLoop.pause()
   },
   unpause () {
-    console.log('Unpause')
     mainLoop.unpause()
   }
 }
@@ -1020,6 +1018,7 @@ const Serializer = require('../serialization/serializer.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
+  const sideBar = document.getElementById('side-bar')
 
   // events for the buttons
   document.getElementById('serialize-button').addEventListener('click', () => {
@@ -1065,6 +1064,13 @@ module.exports = function () {
   })
   document.getElementById('settings-cancel').addEventListener('click', () => {
     this.dialogs.settingsDialog.close()
+  })
+
+  document.getElementById('open-side-bar').addEventListener('click', () => {
+    sideBar.classList.remove('side-bar-closed')
+  })
+  document.getElementById('close-side-bar').addEventListener('click', () => {
+    sideBar.classList.add('side-bar-closed')
   })
 }
 
