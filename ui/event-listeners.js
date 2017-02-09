@@ -19,7 +19,6 @@ module.exports = function () {
     }
   })
   document.getElementById('open-new-object-dialog').addEventListener('click', () => {
-    animation.pause()
     this.dialogs.newObjectDialog.open()
   })
   document.getElementById('object-delete').addEventListener('click', () => {

@@ -46,9 +46,11 @@ const animation = module.exports = ASTRO.animation = {
     this.animationLoop.start()
   },
   pause () {
+    console.log('Pause')
     mainLoop.pause()
   },
   unpause () {
+    console.log('Unpause')
     mainLoop.unpause()
   }
 }
@@ -728,6 +730,8 @@ module.exports = class Serializer {
 
   static serialize (data) {
     const a = document.createElement('a')
+
+    // create a blob object representing the scene as JSON
     const file = new Blob([JSON.stringify(data, null, '  ')], {
       type: 'application/json'
     })
@@ -759,6 +763,9 @@ document.getElementById('deserialize').addEventListener('click', () => {
 })
 
 },{"../../serialization/deserializer.js":11,"./dialog.js":14}],14:[function(require,module,exports){
+const animation = require('../../animation/animation.js')
+const ui = require('../../ui/ui.js')
+
 module.exports = class Dialog {
   constructor (element) {
     this.element = element
@@ -829,11 +836,17 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-open')
     this.element.classList.remove('dialog-closed')
     this.opened = true
+
+    animation.pause()
   }
   close () {
     this.element.classList.remove('dialog-open')
     this.element.classList.add('dialog-closed')
     this.opened = false
+
+    if (ui.isPlaying) {
+      animation.unpause()
+    }
   }
   static greaterThanZero (input, value) {
     let floatValue = Number(value)
@@ -841,7 +854,7 @@ module.exports = class Dialog {
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":20}],15:[function(require,module,exports){
 module.exports = {
 
   settingsDialog: null,
@@ -984,8 +997,8 @@ settingsDialog.setValues = () => {
 document.getElementById('center-viewport').addEventListener('click', () => {
   animation.translation[0] = 0
   animation.translation[1] = 0
+
   ui.selectedObject = null
-  settingsDialog.setValues()
 })
 
 document.getElementById('settings-submit').addEventListener('click', () => {
@@ -1021,7 +1034,6 @@ module.exports = function () {
     }
   })
   document.getElementById('open-new-object-dialog').addEventListener('click', () => {
-    animation.pause()
     this.dialogs.newObjectDialog.open()
   })
   document.getElementById('object-delete').addEventListener('click', () => {
@@ -1066,6 +1078,7 @@ const animation = require('../animation/animation.js')
 const ui = module.exports = ASTRO.ui = {
 
   selectedObject: null,
+  isPlaying: true,
 
   dialogs: require('./dialogs/init-dialogs.js'),
 
@@ -1150,10 +1163,12 @@ const ui = module.exports = ASTRO.ui = {
 
   pause () {
     animation.pause()
+    this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
   },
   unpause () {
     animation.unpause()
+    this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'
   }
 

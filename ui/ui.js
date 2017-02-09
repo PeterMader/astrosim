@@ -7,6 +7,7 @@ const animation = require('../animation/animation.js')
 const ui = module.exports = ASTRO.ui = {
 
   selectedObject: null,
+  isPlaying: true,
 
   dialogs: require('./dialogs/init-dialogs.js'),
 
@@ -91,10 +92,12 @@ const ui = module.exports = ASTRO.ui = {
 
   pause () {
     animation.pause()
+    this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
   },
   unpause () {
     animation.unpause()
+    this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'
   }
 

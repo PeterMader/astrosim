@@ -12,9 +12,19 @@ aside#side-bar {
   height: 100%;
   width: 20%;
   background-color: #FFFFFF;
-  z-index: 2;
+  z-index: 10;
   overflow-y: auto;
   max-height: 100vh;
+}
+
+#open-side-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #EEEEEE;
+  border-radius: 3px;
+  border: 1px solid #999999;
+  z-index: 9;
 }
 
 #canvas {
@@ -22,7 +32,7 @@ aside#side-bar {
   background-color: #000000;
   position: absolute;
   top: 0;
-  z-index: 1;
+  z-index: 5;
 }
 
 .selected-object {
@@ -36,15 +46,15 @@ aside#side-bar {
 
 .dialog {
   overflow-y: auto;
-  z-index: 3;
+  z-index: 20;
   border-radius: 3px;
 }
 
-.dialog-open {
+.dialog-open, .menu-open {
   display: block;
 }
 
-.dialog-closed {
+.dialog-closed, .menu-closed {
   display: none;
 }
 
@@ -82,6 +92,10 @@ aside#side-bar {
 h3 {
   color: #3477CC;
   text-align: center;
+}
+
+h5 {
+  padding-left: 10px;
 }
 
 .object-list-item {

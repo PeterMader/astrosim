@@ -21,6 +21,8 @@ module.exports = class Serializer {
 
   static serialize (data) {
     const a = document.createElement('a')
+
+    // create a blob object representing the scene as JSON
     const file = new Blob([JSON.stringify(data, null, '  ')], {
       type: 'application/json'
     })

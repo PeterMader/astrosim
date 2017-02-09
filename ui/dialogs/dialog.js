@@ -1,3 +1,6 @@
+const animation = require('../../animation/animation.js')
+const ui = require('../../ui/ui.js')
+
 module.exports = class Dialog {
   constructor (element) {
     this.element = element
@@ -68,11 +71,17 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-open')
     this.element.classList.remove('dialog-closed')
     this.opened = true
+
+    animation.pause()
   }
   close () {
     this.element.classList.remove('dialog-open')
     this.element.classList.add('dialog-closed')
     this.opened = false
+
+    if (ui.isPlaying) {
+      animation.unpause()
+    }
   }
   static greaterThanZero (input, value) {
     let floatValue = Number(value)
