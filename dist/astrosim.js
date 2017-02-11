@@ -16,15 +16,19 @@ const animation = module.exports = ASTRO.animation = {
   canvas: null,
   ctx: null,
 
+  frames: 0, // frames counter
+  traceFrequency: 10,
+
   shouldRender: true,
   drawHistory: true,
 
   animationLoop: new Loop(() => {
-    if (mainLoop.running || animation.shouldRender) {
+    if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
     }
+    animation.frames += 1
   }),
 
   adjust () {
@@ -305,10 +309,7 @@ animation.render = function () {
         if (object.historyOverflow) {
           // start at the index
           const length = history.length
-          ctx.moveTo(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetX)
-          if (object.historyIndex % 40 === 0) {
-            console.log(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetX)
-          }
+          ctx.moveTo(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetY)
           for (i = object.historyIndex + 2; i < length; i += 2) {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
@@ -321,6 +322,7 @@ animation.render = function () {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
         }
+        ctx.lineTo(pos[0], pos[1])
         ctx.stroke()
       }
     }
@@ -413,10 +415,13 @@ module.exports = class Body {
     this.color = new Color()
     this.name = name
 
-    // remember the last 50 positions
-    this.history = new Float32Array(100)
+    // remember the last 100 positions
+    this.history = new Float32Array(200)
     this.historyIndex = 0
     this.historyOverflow = false
+
+    this.history[0] = position[0]
+    this.history[1] = position[1]
   }
 
   applyForce (force) {
@@ -442,7 +447,9 @@ module.exports = class Body {
     // move object by adding its velocity to its position
     this.position[0] += this.velocity[0] * deltaTime
     this.position[1] += this.velocity[1] * deltaTime
+  }
 
+  savePosition () {
     this.history[this.historyIndex] = this.position[0]
     this.history[this.historyIndex + 1] = this.position[1]
     this.historyIndex += 2
@@ -450,6 +457,11 @@ module.exports = class Body {
       this.historyIndex = 0
       this.historyOverflow = true
     }
+  }
+
+  clearHistory () {
+    this.historyIndex = 0
+    this.historyOverflow = false
   }
 
   update (deltaTime) {
@@ -529,6 +541,7 @@ module.exports = class Body {
 }
 
 },{"../animation/color.js":2,"../astrosim.js":7,"./vec2.js":10}],9:[function(require,module,exports){
+const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
 const Vec2 = require('./vec2.js')
 
@@ -574,16 +587,19 @@ const content = module.exports = ASTRO.content = {
       this.TICKS_PER_FRAME -= 1
     }
     const {objects} = ASTRO.content
-    this.ticks += 1
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaSecs
     let index
     while (this.pendingTicks > 0) {
+      this.ticks += 1
       for (index in objects) {
         objects[index].update(deltaSecs)
       }
       for (index in objects) {
         objects[index].move(deltaSecs)
+        if (this.ticks % animation.traceFrequency === 0) {
+          objects[index].savePosition()
+        }
       }
       this.pendingTicks -= 1
     }
@@ -600,7 +616,7 @@ const content = module.exports = ASTRO.content = {
   }
 }
 
-},{"../astrosim.js":7,"./vec2.js":10}],10:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"./vec2.js":10}],10:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -767,7 +783,8 @@ module.exports = class Serializer {
     }
     data.content = {
       selectedObject: ui.selectedObject ? ui.selectedObject.serialize() : null,
-      objects: content.objects.map((body) => body.serialize())
+      objects: content.objects.map((body) => body.serialize()),
+      timeFactor: content.TIME_FACTOR
     }
     return data
   }
@@ -1004,6 +1021,8 @@ document.getElementById('object-submit').addEventListener('click', () => {
     object.mass = Number(mass.value)
     object.radius = Number(radius.value)
     object.color = Color.fromHexString(color.value)
+
+    object.clearHistory()
     objectDialog.close()
     ui.update()
     animation.shouldRender = true
@@ -1217,11 +1236,15 @@ const ui = module.exports = ASTRO.ui = {
     animation.pause()
     this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
+    this.togglePauseButton.classList.add('play-button')
+    this.togglePauseButton.classList.remove('pause-button')
   },
   unpause () {
     animation.unpause()
     this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'
+    this.togglePauseButton.classList.remove('play-button')
+    this.togglePauseButton.classList.add('pause-button')
   }
 
 }

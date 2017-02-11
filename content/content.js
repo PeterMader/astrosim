@@ -1,3 +1,4 @@
+const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
 const Vec2 = require('./vec2.js')
 
@@ -43,16 +44,19 @@ const content = module.exports = ASTRO.content = {
       this.TICKS_PER_FRAME -= 1
     }
     const {objects} = ASTRO.content
-    this.ticks += 1
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaSecs
     let index
     while (this.pendingTicks > 0) {
+      this.ticks += 1
       for (index in objects) {
         objects[index].update(deltaSecs)
       }
       for (index in objects) {
         objects[index].move(deltaSecs)
+        if (this.ticks % animation.traceFrequency === 0) {
+          objects[index].savePosition()
+        }
       }
       this.pendingTicks -= 1
     }

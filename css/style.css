@@ -5,7 +5,7 @@ html, body {
   font-family: sans-serif;
 }
 
-aside#side-bar {
+#side-bar {
   position: absolute;
   top: 0;
   left: 0;
@@ -17,14 +17,52 @@ aside#side-bar {
   max-height: 100vh;
 }
 
+.icon {
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 32px;
+  width: 32px;
+}
+
+div.icon-before {
+  background-position: 3px center;
+  padding-left: 30px;
+  background-repeat: no-repeat;
+}
+
+.pause-button {
+  background-image: url('../res/icon_pause.png');
+}
+
+.play-button {
+  background-image: url('../res/icon_play.png');
+}
+
+#open-settings-dialog {
+  background-image: url('../res/icon_settings.png');
+}
+
+#open-new-object-dialog {
+  background-image: url('../res/icon_add.png');
+}
+
+#serialize-button {
+  background-image: url('../res/icon_export.png');
+}
+
+#open-deserialize-button {
+  background-image: url('../res/icon_import.png');
+}
+
 #open-side-bar {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: #EEEEEE;
   padding: 5px;
-  cursor: pointer;
+  background-color: #EEEEEE;
+  background-image: url('../res/icon_menu.png');
   border-radius: 3px;
+  cursor: pointer;
   border: 1px solid #999999;
   z-index: 9;
 }
@@ -42,6 +80,7 @@ aside#side-bar {
   top: 5px;
   right: 5px;
   cursor: pointer;
+  background-image: url('../res/icon_close.png');
 }
 
 .selected-object {
@@ -160,4 +199,25 @@ input:focus {
 
 .main-button:hover {
   color: #000000;
+}
+
+@media (max-width: 900px) {
+  #side-bar {
+    width: 50%;
+  }
+  .dialog {
+    width: 70vw;
+    left: 15vw;
+    border: 1px solid #DDDDDD;
+  }
+}
+
+@media (max-width: 400px) {
+  #side-bar {
+    width: 95%;
+  }
+  .dialog {
+    width: 90vw;
+    left: 5vw;
+  }
 }

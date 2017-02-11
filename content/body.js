@@ -12,10 +12,13 @@ module.exports = class Body {
     this.color = new Color()
     this.name = name
 
-    // remember the last 50 positions
-    this.history = new Float32Array(100)
+    // remember the last 100 positions
+    this.history = new Float32Array(200)
     this.historyIndex = 0
     this.historyOverflow = false
+
+    this.history[0] = position[0]
+    this.history[1] = position[1]
   }
 
   applyForce (force) {
@@ -41,7 +44,9 @@ module.exports = class Body {
     // move object by adding its velocity to its position
     this.position[0] += this.velocity[0] * deltaTime
     this.position[1] += this.velocity[1] * deltaTime
+  }
 
+  savePosition () {
     this.history[this.historyIndex] = this.position[0]
     this.history[this.historyIndex + 1] = this.position[1]
     this.historyIndex += 2
@@ -49,6 +54,11 @@ module.exports = class Body {
       this.historyIndex = 0
       this.historyOverflow = true
     }
+  }
+
+  clearHistory () {
+    this.historyIndex = 0
+    this.historyOverflow = false
   }
 
   update (deltaTime) {

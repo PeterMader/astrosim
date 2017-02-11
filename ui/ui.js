@@ -94,11 +94,15 @@ const ui = module.exports = ASTRO.ui = {
     animation.pause()
     this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
+    this.togglePauseButton.classList.add('play-button')
+    this.togglePauseButton.classList.remove('pause-button')
   },
   unpause () {
     animation.unpause()
     this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'
+    this.togglePauseButton.classList.remove('play-button')
+    this.togglePauseButton.classList.add('pause-button')
   }
 
 }
