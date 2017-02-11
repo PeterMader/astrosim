@@ -48,6 +48,8 @@ document.getElementById('object-submit').addEventListener('click', () => {
     object.mass = Number(mass.value)
     object.radius = Number(radius.value)
     object.color = Color.fromHexString(color.value)
+
+    object.clearHistory()
     objectDialog.close()
     ui.update()
     animation.shouldRender = true

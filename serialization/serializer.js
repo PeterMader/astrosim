@@ -14,7 +14,8 @@ module.exports = class Serializer {
     }
     data.content = {
       selectedObject: ui.selectedObject ? ui.selectedObject.serialize() : null,
-      objects: content.objects.map((body) => body.serialize())
+      objects: content.objects.map((body) => body.serialize()),
+      timeFactor: content.TIME_FACTOR
     }
     return data
   }

@@ -81,10 +81,7 @@ animation.render = function () {
         if (object.historyOverflow) {
           // start at the index
           const length = history.length
-          ctx.moveTo(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetX)
-          if (object.historyIndex % 40 === 0) {
-            console.log(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetX)
-          }
+          ctx.moveTo(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetY)
           for (i = object.historyIndex + 2; i < length; i += 2) {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
@@ -97,6 +94,7 @@ animation.render = function () {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
         }
+        ctx.lineTo(pos[0], pos[1])
         ctx.stroke()
       }
     }

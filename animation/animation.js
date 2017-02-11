@@ -15,15 +15,19 @@ const animation = module.exports = ASTRO.animation = {
   canvas: null,
   ctx: null,
 
+  frames: 0, // frames counter
+  traceFrequency: 10,
+
   shouldRender: true,
   drawHistory: true,
 
   animationLoop: new Loop(() => {
-    if (mainLoop.running || animation.shouldRender) {
+    if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
     }
+    animation.frames += 1
   }),
 
   adjust () {
