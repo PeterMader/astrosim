@@ -20,7 +20,7 @@ const color = document.getElementById('new-object-color')
 // set the filter logic of the input elements
 newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
-newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
+newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
 document.getElementById('new-object-submit').addEventListener('click', () => {
   if (newObjectDialog.validate()) {
