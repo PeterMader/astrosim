@@ -2,6 +2,7 @@ const content = require('../content/content.js')
 const animation = require('./animation.js')
 const Body = require('../content/body.js')
 const Vec2 = require('../content/vec2.js')
+const Vec3 = require('../content/vec3.js')
 
 animation.drawCircle = function (x, y, radius, color) {
   const {ctx} = this
@@ -15,12 +16,17 @@ animation.drawCircle = function (x, y, radius, color) {
   ctx.fill()
 }
 
+animation.vertexToDot = function (src, dest) {
+  const {translation} = this
+  Vec3.scale()
+}
+
 animation.drawControls = function () {
   const {translation, ratio, canvas, ctx} = this
 
   // draw the center point
-  const x = translation[0] + canvas.width / 2
-  const y = translation[1] + canvas.height / 2
+  const x = translation[0] / (translation[2] || 1e-10) + canvas.width / 2
+  const y = translation[1] / (translation[2] || 1e-10) + canvas.height / 2
   ctx.strokeStyle = '#FFFFFF'
   ctx.beginPath()
   ctx.moveTo(x, y - 10)
@@ -32,7 +38,7 @@ animation.drawControls = function () {
   // draw the unit
   ctx.fillStyle = '#FFFFFF'
   const unit = 200
-  const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
+  const width = (unit * content.METERS_PER_PIXEL).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
   const metrics = ctx.measureText(width)
   ctx.fillText(width, canvas.width - unit / 2 - metrics.width / 2 - 20, canvas.height - 40)
@@ -40,14 +46,18 @@ animation.drawControls = function () {
 
 animation.render = function () {
   const {ctx, canvas} = this
-  const {objects} = content
+  const objects = content.objects.sort((a, b) => {
+    const z1 = a.position[2]
+    const z2 = b.position[2]
+    return z1 > z2 ? -1 : z1 < z2 ? 1 : 0
+  })
 
   // clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   if (animation.selectedObject instanceof Body) {
     // center the canvas at the selected object's center
-    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
+    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL, content.temp1))
   }
 
   if (objects.length > 0) {
@@ -57,22 +67,33 @@ animation.render = function () {
     const pos = content.temp2
     const offsetX = this.translation[0] + canvasCenter[0]
     const offsetY = this.translation[1] + canvasCenter[1]
-    const factor = this.ratio / content.METERS_PER_PIXEL
+    const offsetZ = this.translation[2]
 
     let index
     // walk over each object and draw it
     for (index in objects) {
       const object = objects[index]
-      Vec2.scale(object.position, factor, pos)
-      pos[0] += offsetX
-      pos[1] += offsetY
+      const factor = 1 / content.METERS_PER_PIXEL
+      const distance = ((object.position[2] - offsetZ) || 1e-10) / content.METERS_PER_PIXEL
+      if (distance < 0) {
+        continue
+      }
+      Vec3.scale(object.position, factor, pos)
+      pos[0] += this.translation[0]
+      pos[1] += this.translation[1]
+      pos[0] /= distance
+      pos[1] /= distance
+      pos[0] += canvasCenter[0]
+      pos[1] += canvasCenter[1]
 
       // calculate the circle's radius
-      const radius = object.radius * this.ratio
+      const radius = object.radius / distance
       const color = object.color.hexString()
-      this.drawCircle(pos[0], pos[1], Math.max(radius / content.METERS_PER_PIXEL, 3), color)
 
-      if (animation.drawHistory) {
+      // draw the circle
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 1), color)
+
+      if (animation.drawHistory && false) {
         // draw the object's trace
         ctx.beginPath()
         ctx.strokeStyle = color

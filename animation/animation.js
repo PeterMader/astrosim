@@ -1,13 +1,13 @@
 const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
-const Vec2 = require('../content/vec2.js')
+const Vec3 = require('../content/vec3.js')
 
 const animation = module.exports = ASTRO.animation = {
   MIN_SCALING: 2e-5,
   MAX_SCALING: 2e5,
 
-  translation: Vec2.create(0, 0),
+  translation: Vec3.create(0, 0, 1),
   ratio: 1,
   size: 0,
   width: 0,

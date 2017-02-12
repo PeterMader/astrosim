@@ -10,6 +10,7 @@ module.exports = class Serializer {
     data.viewport = {
       translationX: animation.translation[0],
       translationY: animation.translation[1],
+      translationZ: animation.translation[2],
       ratio: animation.ratio
     }
     data.content = {

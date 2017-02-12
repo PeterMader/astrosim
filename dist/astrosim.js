@@ -2,13 +2,13 @@
 const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
-const Vec2 = require('../content/vec2.js')
+const Vec3 = require('../content/vec3.js')
 
 const animation = module.exports = ASTRO.animation = {
   MIN_SCALING: 2e-5,
   MAX_SCALING: 2e5,
 
-  translation: Vec2.create(0, 0),
+  translation: Vec3.create(0, 0, 1),
   ratio: 1,
   size: 0,
   width: 0,
@@ -58,7 +58,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":10,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec3.js":11,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -143,7 +143,7 @@ module.exports = function () {
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
-    const factor = e.deltaY > 0 ? .5 : 2
+    const factor = e.deltaY > 0 ? -1 : 1
     const clientX = (e.clientX - canvas.offsetLeft) || (canvas.width / 2)
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
@@ -230,6 +230,7 @@ const content = require('../content/content.js')
 const animation = require('./animation.js')
 const Body = require('../content/body.js')
 const Vec2 = require('../content/vec2.js')
+const Vec3 = require('../content/vec3.js')
 
 animation.drawCircle = function (x, y, radius, color) {
   const {ctx} = this
@@ -247,8 +248,8 @@ animation.drawControls = function () {
   const {translation, ratio, canvas, ctx} = this
 
   // draw the center point
-  const x = translation[0] + canvas.width / 2
-  const y = translation[1] + canvas.height / 2
+  const x = translation[0] / (translation[2] || 1e-10) + canvas.width / 2
+  const y = translation[1] / (translation[2] || 1e-10) + canvas.height / 2
   ctx.strokeStyle = '#FFFFFF'
   ctx.beginPath()
   ctx.moveTo(x, y - 10)
@@ -257,10 +258,14 @@ animation.drawControls = function () {
   ctx.lineTo(x + 10, y)
   ctx.stroke()
 
+
+  // ctx.beginPath()
+  // ctx.moveTo(1 / (object.position[2] - offsetZ) || 1e-10 / content.METERS_PER_PIXEL)
+
   // draw the unit
   ctx.fillStyle = '#FFFFFF'
   const unit = 200
-  const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
+  const width = (unit * content.METERS_PER_PIXEL).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
   const metrics = ctx.measureText(width)
   ctx.fillText(width, canvas.width - unit / 2 - metrics.width / 2 - 20, canvas.height - 40)
@@ -268,14 +273,18 @@ animation.drawControls = function () {
 
 animation.render = function () {
   const {ctx, canvas} = this
-  const {objects} = content
+  const objects = content.objects.sort((a, b) => {
+    const z1 = a.position[2]
+    const z2 = b.position[2]
+    return z1 > z2 ? -1 : z1 < z2 ? 1 : 0
+  })
 
   // clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   if (animation.selectedObject instanceof Body) {
     // center the canvas at the selected object's center
-    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
+    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL, content.temp1))
   }
 
   if (objects.length > 0) {
@@ -285,22 +294,33 @@ animation.render = function () {
     const pos = content.temp2
     const offsetX = this.translation[0] + canvasCenter[0]
     const offsetY = this.translation[1] + canvasCenter[1]
-    const factor = this.ratio / content.METERS_PER_PIXEL
+    const offsetZ = this.translation[2]
 
     let index
     // walk over each object and draw it
     for (index in objects) {
       const object = objects[index]
-      Vec2.scale(object.position, factor, pos)
-      pos[0] += offsetX
-      pos[1] += offsetY
+      const factor = 1 / content.METERS_PER_PIXEL
+      const distance = ((object.position[2] - offsetZ) || 1e-10) / content.METERS_PER_PIXEL
+      if (distance < 0) {
+        continue
+      }
+      Vec3.scale(object.position, factor, pos)
+      pos[0] += this.translation[0]
+      pos[1] += this.translation[1]
+      pos[0] /= distance
+      pos[1] /= distance
+      pos[0] += canvasCenter[0]
+      pos[1] += canvasCenter[1]
 
       // calculate the circle's radius
-      const radius = object.radius * this.ratio
+      const radius = object.radius / distance
       const color = object.color.hexString()
-      this.drawCircle(pos[0], pos[1], Math.max(radius / content.METERS_PER_PIXEL, 3), color)
 
-      if (animation.drawHistory) {
+      // draw the circle
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 1), color)
+
+      if (animation.drawHistory && false) {
         // draw the object's trace
         ctx.beginPath()
         ctx.strokeStyle = color
@@ -332,53 +352,31 @@ animation.render = function () {
   this.drawControls()
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":10,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":10,"../content/vec3.js":11,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
+const content = require('../content/content.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.center = function (pos) {
-  Vec2.scale(pos, -this.ratio, this.translation)
+  // Vec2.scale(pos, -this.ratio, this.translation)
+  this.translation[0] = pos[0]
+  this.translation[1] = pos[1]
+  this.translation[2] = .5
 }
 
 animation.translate = function (x, y) {
-  animation.translation[0] -= x
-  animation.translation[1] -= y
+  animation.translation[0] -= x * content.METERS_PER_PIXEL
+  animation.translation[1] -= y * content.METERS_PER_PIXEL
 
   animation.shouldRender = true
 }
 
 animation.scale = function (factor, centerX, centerY) {
-  const newRatio = animation.ratio * factor
-
-  if (newRatio < animation.MIN_SCALING) {
-    return
-  }
-
-  if (newRatio > animation.MAX_SCALING) {
-    return
-  }
-
-  animation.ratio = newRatio
-
-  // zoom center point
-  const pX = ((centerX || 0) - animation.translation[0]) / animation.width
-  const pY = ((centerY || 0) - animation.translation[1]) / animation.height
-
-  // update dimensions
-  animation.width = canvas.width * newRatio
-  animation.height = canvas.height * newRatio
-
-  // translate view back to center point
-  const x = animation.width * pX - centerX
-  const y = animation.height * pY - centerY
-
-  animation.translation[0] = -x
-  animation.translation[1] = -y
-
+  this.translation[2] += factor * content.METERS_PER_PIXEL
   animation.shouldRender = true
 }
 
-},{"../content/vec2.js":10,"./animation.js":1}],7:[function(require,module,exports){
+},{"../content/content.js":9,"../content/vec2.js":10,"./animation.js":1}],7:[function(require,module,exports){
 const Loop = require('./animation/loop.js')
 
 const ASTRO = module.exports = {
@@ -400,8 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":20}],8:[function(require,module,exports){
-const Vec2 = require('./vec2.js')
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":21}],8:[function(require,module,exports){
+const Vec3 = require('./vec3.js')
 const Color = require('../animation/color.js')
 const {content} = require('../astrosim.js')
 const ASTRO = require('../astrosim.js')
@@ -409,33 +407,37 @@ const ASTRO = require('../astrosim.js')
 module.exports = class Body {
   constructor (position, mass, radius, name) {
     this.position = position
-    this.velocity = Vec2.create()
+    this.velocity = Vec3.create()
     this.mass = mass || 0
     this.radius = radius
     this.color = new Color()
     this.name = name
 
     // remember the last 100 positions
-    this.history = new Float32Array(200)
+    this.history = new Float32Array(300)
     this.historyIndex = 0
     this.historyOverflow = false
 
     this.history[0] = position[0]
     this.history[1] = position[1]
+    this.history[2] = position[2]
   }
 
   applyForce (force) {
     const factor = 1 / this.mass
     this.velocity[0] += force[0] * factor
     this.velocity[1] += force[1] * factor
+    this.velocity[2] += force[2] * factor
   }
 
   serialize () {
     return {
       positionX: this.position[0],
       positionY: this.position[1],
+      positionZ: this.position[2],
       velocityX: this.velocity[0],
       velocityY: this.velocity[1],
+      velocityZ: this.velocity[2],
       mass: this.mass,
       radius: this.radius,
       color: this.color.hexString(),
@@ -447,12 +449,14 @@ module.exports = class Body {
     // move object by adding its velocity to its position
     this.position[0] += this.velocity[0] * deltaTime
     this.position[1] += this.velocity[1] * deltaTime
+    this.position[2] += this.velocity[2] * deltaTime
   }
 
   savePosition () {
     this.history[this.historyIndex] = this.position[0]
     this.history[this.historyIndex + 1] = this.position[1]
-    this.historyIndex += 2
+    this.history[this.historyIndex + 2] = this.position[2]
+    this.historyIndex += 3
     if (this.historyIndex >= this.history.length) {
       this.historyIndex = 0
       this.historyOverflow = true
@@ -479,27 +483,27 @@ module.exports = class Body {
 
   interact (body, objects, bodyIndex, deltaTime) {
     // calculate the distance between the two objects
-    let distance = Vec2.subtract(this.position, body.position, ASTRO.content.temp1)
-    const length = Vec2.getLength(distance) || 1e-10
+    let distance = Vec3.subtract(this.position, body.position, ASTRO.content.temp1)
+    const length = Vec3.getLength(distance) || 1e-10
     if (isNaN(distance[0]) || isNaN(distance[1])) {
-      distance[0] = distance[1] = 0
+      distance[0] = distance[1] = distance[2] = 0
     }
 
     // check for collision
     if (length < this.radius) {
-      const newPosition = Vec2.weighedCenter(this.position, this.mass, body.position, body.mass, distance)
+      const newPosition = Vec3.weighedCenter(this.position, this.mass, body.position, body.mass, distance)
       const newRadius = Math.pow(4 / 3 * Math.PI * Math.pow(this.radius, 3) + 4 / 3 * Math.PI * Math.pow(body.radius, 3), 1 / 3)
-      const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
+      const newBody = new Body(Vec3.copy(newPosition), this.mass + body.mass, newRadius)
 
       // remove the two colliding objects
       objects.splice(bodyIndex, 1)
       objects.splice(objects.indexOf(this), 1)
 
       // calculate the velocity and the color of the new object
-      const thisMomentum = Vec2.scale(this.velocity, this.mass, ASTRO.content.temp2)
-      const bodyMomentum = Vec2.scale(body.velocity, body.mass, ASTRO.content.temp3)
-      Vec2.add(thisMomentum, bodyMomentum, newBody.velocity)
-      Vec2.scale(newBody.velocity, 1 / newBody.mass, newBody.velocity)
+      const thisMomentum = Vec3.scale(this.velocity, this.mass, ASTRO.content.temp2)
+      const bodyMomentum = Vec3.scale(body.velocity, body.mass, ASTRO.content.temp3)
+      Vec3.add(thisMomentum, bodyMomentum, newBody.velocity)
+      Vec3.scale(newBody.velocity, 1 / newBody.mass, newBody.velocity)
       newBody.color = this.color.interpolate(body.color)
 
       // finally add the new object and show it in the UI
@@ -507,15 +511,15 @@ module.exports = class Body {
     } else {
       // calculate the gravity
       const force = ASTRO.content.temp2
-      Vec2.scale(
-        Vec2.normalize(distance, distance),
+      Vec3.scale(
+        Vec3.normalize(distance, distance),
         deltaTime * ASTRO.content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
         force
       )
 
       // move the bodies
       // body.applyForce(force)
-      Vec2.scale(force, -1, force)
+      Vec3.scale(force, -1, force)
       this.applyForce(force)
     }
   }
@@ -525,9 +529,10 @@ module.exports = class Body {
       return null
     }
     const newBody = new Body(
-      Vec2.create(
+      Vec3.create(
         typeof data.positionX === 'number' ? data.positionX : 0,
-        typeof data.positionY === 'number' ? data.positionY : 0
+        typeof data.positionY === 'number' ? data.positionY : 0,
+        typeof data.positionZ === 'number' ? data.positionZ : 0
       ),
       typeof data.mass === 'number' ? data.mass : 1000,
       typeof data.radius === 'number' ? data.radius : 1000,
@@ -536,14 +541,15 @@ module.exports = class Body {
     newBody.color = Color.fromHexString(data.color)
     newBody.velocity[0] = typeof data.velocityX === 'number' ? data.velocityX : 0
     newBody.velocity[1] = typeof data.velocityY === 'number' ? data.velocityY : 0
+    newBody.velocity[2] = typeof data.velocityZ === 'number' ? data.velocityZ : 0
     return newBody
   }
 }
 
-},{"../animation/color.js":2,"../astrosim.js":7,"./vec2.js":10}],9:[function(require,module,exports){
+},{"../animation/color.js":2,"../astrosim.js":7,"./vec3.js":11}],9:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
-const Vec2 = require('./vec2.js')
+const Vec3 = require('./vec3.js')
 
 const content = module.exports = ASTRO.content = {
 
@@ -558,12 +564,12 @@ const content = module.exports = ASTRO.content = {
   pendingTicks: 0,
   TICKS_PER_FRAME: 10,
 
-  SECONDS_IN_YEAR: 31556927, // a year has 31,556,927
+  SECONDS_IN_YEAR: 31556927, // a year has 31,556,927 seconds
   TIME_FACTOR: 1, // the factor the time passed is multiplied by
 
-  temp1: Vec2.create(),
-  temp2: Vec2.create(),
-  temp3: Vec2.create(),
+  temp1: Vec3.create(),
+  temp2: Vec3.create(),
+  temp3: Vec3.create(),
 
   initialize () {
     this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
@@ -581,7 +587,9 @@ const content = module.exports = ASTRO.content = {
   },
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    this.temp1[0] = this.temp1[1] = this.temp2[0] = this.temp2[1] = this.temp3[0] = this.temp3[1] = 0
+    this.temp1[0] = this.temp1[1] = this.temp1[2] =
+        this.temp2[0] = this.temp2[1] = this.temp2[2] =
+        this.temp3[0] = this.temp3[1] = this.temp3[2] = 0
     this.pendingTicks += this.TICKS_PER_FRAME
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
@@ -607,16 +615,16 @@ const content = module.exports = ASTRO.content = {
   // calculates the momentum of all objects
   momentum () {
     return this.objects.reduce((acc, obj) => {
-      return Vec2.add(acc, Vec2.scale(obj.velocity, obj.mass))
-    }, Vec2.create())
+      return Vec3.add(acc, Vec3.scale(obj.velocity, obj.mass))
+    }, Vec3.create())
   },
   // calculates the velocity of the system
   velocity () {
-    return Vec2.scale(this.momentum(), 1 / this.objects.reduce((acc, obj) => acc + obj.mass, 0))
+    return Vec3.scale(this.momentum(), 1 / this.objects.reduce((acc, obj) => acc + obj.mass, 0))
   }
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"./vec2.js":10}],10:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"./vec3.js":11}],10:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -716,6 +724,93 @@ module.exports = class Vec2 {
 }
 
 },{}],11:[function(require,module,exports){
+module.exports = class Vec3 {
+
+  static create (x, y, z) {
+    const newVector = new Float32Array(3)
+    newVector[0] = x || 0
+    newVector[1] = y || 0
+    newVector[2] = z || 0
+
+    return newVector
+  }
+
+  static copy (a, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create(a[0], a[1], a[2])
+    } else {
+      out[0] = a[0]
+      out[1] = a[1]
+      out[2] = a[2]
+    }
+    return out
+  }
+
+  static weighedCenter (a, w1, b, w2, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    const factor = w2 / (w1 + w2)
+    out[0] = factor * ((b[0] - a[0]) || 1e-10) + a[0]
+    out[1] = factor * ((b[1] - a[1]) || 1e-10) + a[1]
+    out[2] = factor * ((b[2] - a[2]) || 1e-10) + a[2]
+    return out
+  }
+
+  static add (a, b, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    out[0] = a[0] + b[0]
+    out[1] = a[1] + b[1]
+    out[2] = a[2] + b[2]
+    return out
+  }
+
+  static subtract (a, b, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    out[0] = a[0] - b[0]
+    out[1] = a[1] - b[1]
+    out[2] = a[2] - b[2]
+    return out
+  }
+
+  static getLength (a) {
+    return Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
+  }
+
+  static normalize (a, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    let length = Vec3.getLength(a)
+    out[0] = a[0] / length
+    out[1] = a[1] / length
+    out[2] = a[2] / length
+    return out
+  }
+
+  static scale (a, scalar, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    out[0] = a[0] * scalar
+    out[1] = a[1] * scalar
+    out[2] = a[2] * scalar
+    return out
+  }
+
+}
+
+},{}],12:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -740,6 +835,7 @@ module.exports = class Deserializer {
 
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
+      animation.translation[2] = data.viewport.translationZ
       animation.ratio = data.viewport.ratio
       animation.selectedObject = Body.fromSerialized(data.content.selectedObject)
 
@@ -756,6 +852,7 @@ module.exports = class Deserializer {
       (typeof data.viewport === 'object') &&
       (typeof data.viewport.translationX === 'number') && !isNaN(data.viewport.translationX) &&
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&
+      (typeof data.viewport.translationZ === 'number') && !isNaN(data.viewport.translationZ) &&
       (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&
@@ -766,7 +863,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":20}],12:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":21}],13:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -779,6 +876,7 @@ module.exports = class Serializer {
     data.viewport = {
       translationX: animation.translation[0],
       translationY: animation.translation[1],
+      translationZ: animation.translation[2],
       ratio: animation.ratio
     }
     data.content = {
@@ -805,7 +903,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":20}],13:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":21}],14:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 
@@ -823,7 +921,7 @@ document.getElementById('deserialize').addEventListener('click', () => {
   reader.readAsText(file.files[0])
 })
 
-},{"../../serialization/deserializer.js":11,"./dialog.js":14}],14:[function(require,module,exports){
+},{"../../serialization/deserializer.js":12,"./dialog.js":15}],15:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 
@@ -915,7 +1013,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":20}],15:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":21}],16:[function(require,module,exports){
 module.exports = {
 
   settingsDialog: null,
@@ -931,10 +1029,10 @@ module.exports = {
   }
 }
 
-},{"./deserialize-dialog.js":13,"./new-object-dialog.js":16,"./object-dialog.js":17,"./settings-dialog.js":18}],16:[function(require,module,exports){
+},{"./deserialize-dialog.js":14,"./new-object-dialog.js":17,"./object-dialog.js":18,"./settings-dialog.js":19}],17:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
-const Vec2 = require('../../content/vec2.js')
+const Vec3 = require('../../content/vec3.js')
 const Color = require('../../animation/color.js')
 const Body = require('../../content/body.js')
 const content = require('../../content/content.js')
@@ -945,21 +1043,23 @@ const newObjectDialog = module.exports = new Dialog(document.getElementById('new
 const name = document.getElementById('new-object-name')
 const positionX = document.getElementById('new-object-position-x')
 const positionY = document.getElementById('new-object-position-y')
+const positionZ = document.getElementById('new-object-position-z')
 const velocityX = document.getElementById('new-object-velocity-x')
 const velocityY = document.getElementById('new-object-velocity-y')
+const velocityZ = document.getElementById('new-object-velocity-z')
 const mass = document.getElementById('new-object-mass')
 const radius = document.getElementById('new-object-radius')
 const color = document.getElementById('new-object-color')
 
 // set the filter logic of the input elements
-newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
+newObjectDialog.registerInput(name, positionX, positionY, positionZ, velocityX, velocityY, velocityZ, mass, radius)
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
-newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
+newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
 document.getElementById('new-object-submit').addEventListener('click', () => {
   if (newObjectDialog.validate()) {
-    const position = Vec2.create(Number(positionX.value), Number(positionY.value))
-    const velocity = Vec2.create(Number(velocityX.value), Number(velocityY.value))
+    const position = Vec3.create(Number(positionX.value), Number(positionY.value), Number(positionZ.value))
+    const velocity = Vec3.create(Number(velocityX.value), Number(velocityY.value), Number(velocityZ.value))
     const object = new Body(position, Number(mass.value), Number(radius.value), name.value.toString())
     object.velocity = velocity
     object.color = Color.fromHexString(color.value)
@@ -970,7 +1070,7 @@ document.getElementById('new-object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":14}],17:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec3.js":11,"./dialog.js":15}],18:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -983,14 +1083,16 @@ const objectDialog = module.exports = new Dialog(document.getElementById('object
 const name = document.getElementById('object-name')
 const positionX = document.getElementById('object-position-x')
 const positionY = document.getElementById('object-position-y')
+const positionZ = document.getElementById('object-position-z')
 const velocityX = document.getElementById('object-velocity-x')
 const velocityY = document.getElementById('object-velocity-y')
+const velocityZ = document.getElementById('object-velocity-z')
 const mass = document.getElementById('object-mass')
 const radius = document.getElementById('object-radius')
 const color = document.getElementById('object-color')
 
 // set the filter logic of the input elements
-objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
+objectDialog.registerInput(name, positionX, positionY, positionZ, velocityX, velocityY, velocityZ, mass, radius)
 objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
@@ -1001,8 +1103,10 @@ objectDialog.setValues = () => {
     'name': object.name || ('Object #' + object.id),
     'position-x': object.position[0].toExponential(3),
     'position-y': object.position[1].toExponential(3),
+    'position-z': object.position[2].toExponential(3),
     'velocity-x': object.velocity[0].toExponential(3),
     'velocity-y': object.velocity[1].toExponential(3),
+    'velocity-z': object.velocity[2].toExponential(3),
     'mass': object.mass.toExponential(3),
     'radius': object.radius.toExponential(3)
   })
@@ -1014,9 +1118,11 @@ document.getElementById('object-submit').addEventListener('click', () => {
     object.name = name.value
     object.position[0] = Number(positionX.value)
     object.position[1] = Number(positionY.value)
+    object.position[2] = Number(positionZ.value)
 
     object.velocity[0] = Number(velocityX.value)
     object.velocity[1] = Number(velocityY.value)
+    object.velocity[2] = Number(velocityZ.value)
 
     object.mass = Number(mass.value)
     object.radius = Number(radius.value)
@@ -1029,7 +1135,7 @@ document.getElementById('object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":20,"./dialog.js":14}],18:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":21,"./dialog.js":15}],19:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1040,19 +1146,18 @@ const settingsDialog = module.exports = new Dialog(document.getElementById('sett
 // get the input elements
 const translationX = document.getElementById('settings-translation-x')
 const translationY = document.getElementById('settings-translation-y')
-const scalingFactor = document.getElementById('settings-scaling-factor')
+const translationZ = document.getElementById('settings-translation-z')
 const timeFactor = document.getElementById('settings-time-factor')
 
 // set the filter logic of the input elements
-settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFactor)
-settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
+settingsDialog.registerInput(translationX, translationY, translationZ, timeFactor)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
 settingsDialog.setValues = () => {
   settingsDialog.set({
     'translation-x': animation.translation[0].toExponential(3),
     'translation-y': animation.translation[1].toExponential(3),
-    'scaling-factor': animation.ratio.toExponential(3),
+    'translation-z': animation.translation[2].toExponential(3),
     'time-factor': content.TIME_FACTOR.toExponential(3)
   })
 }
@@ -1068,14 +1173,14 @@ document.getElementById('settings-submit').addEventListener('click', () => {
   if (settingsDialog.validate()) {
     animation.translation[0] = Number(translationX.value)
     animation.translation[1] = Number(translationY.value)
-    animation.ratio = Number(scalingFactor.value)
+    animation.translation[2] = Number(translationZ.value)
     settingsDialog.close()
     content.TIME_FACTOR = Number(timeFactor.value)
     animation.shouldRender = true
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":20,"./dialog.js":14}],19:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":21,"./dialog.js":15}],20:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1139,7 +1244,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":12,"../ui/ui.js":20}],20:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":13,"../ui/ui.js":21}],21:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
@@ -1177,7 +1282,6 @@ const ui = module.exports = ASTRO.ui = {
       item.addEventListener('click', (e) => {
         if (e.target !== selectButton) {
           // open properties dialog
-          ui.pause()
           content.editedObject = object
           const {objectDialog} = this.dialogs
           objectDialog.setValues()
@@ -1249,4 +1353,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":15,"./event-listeners.js":19}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":16,"./event-listeners.js":20}]},{},[7]);

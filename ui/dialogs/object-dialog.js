@@ -10,14 +10,16 @@ const objectDialog = module.exports = new Dialog(document.getElementById('object
 const name = document.getElementById('object-name')
 const positionX = document.getElementById('object-position-x')
 const positionY = document.getElementById('object-position-y')
+const positionZ = document.getElementById('object-position-z')
 const velocityX = document.getElementById('object-velocity-x')
 const velocityY = document.getElementById('object-velocity-y')
+const velocityZ = document.getElementById('object-velocity-z')
 const mass = document.getElementById('object-mass')
 const radius = document.getElementById('object-radius')
 const color = document.getElementById('object-color')
 
 // set the filter logic of the input elements
-objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
+objectDialog.registerInput(name, positionX, positionY, positionZ, velocityX, velocityY, velocityZ, mass, radius)
 objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
@@ -28,8 +30,10 @@ objectDialog.setValues = () => {
     'name': object.name || ('Object #' + object.id),
     'position-x': object.position[0].toExponential(3),
     'position-y': object.position[1].toExponential(3),
+    'position-z': object.position[2].toExponential(3),
     'velocity-x': object.velocity[0].toExponential(3),
     'velocity-y': object.velocity[1].toExponential(3),
+    'velocity-z': object.velocity[2].toExponential(3),
     'mass': object.mass.toExponential(3),
     'radius': object.radius.toExponential(3)
   })
@@ -41,9 +45,11 @@ document.getElementById('object-submit').addEventListener('click', () => {
     object.name = name.value
     object.position[0] = Number(positionX.value)
     object.position[1] = Number(positionY.value)
+    object.position[2] = Number(positionZ.value)
 
     object.velocity[0] = Number(velocityX.value)
     object.velocity[1] = Number(velocityY.value)
+    object.velocity[2] = Number(velocityZ.value)
 
     object.mass = Number(mass.value)
     object.radius = Number(radius.value)

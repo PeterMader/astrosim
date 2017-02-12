@@ -18,7 +18,7 @@
     <div id="open-side-bar" class="icon" title="Open side bar"></div>
 
     <aside id="side-bar">
-      <h5>AstroSim</h5>
+      <h5>AstroSim experimental</h5>
       <div id="close-side-bar" class="icon close-button" title="Hide side bar"></div>
       <div class="main-buttons">
         <div class="main-button icon-before pause-button" id="toggle-pause-button">Pause</div>
@@ -61,9 +61,9 @@
           <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
         </div>
         <div class="item">
-          Scaling factor:
-          <input name="scaling-factor" value="0" id="settings-scaling-factor">
-          <div class="description">The scaling factor of the viewport.</div>
+          Translation in z direction:
+          <input name="translation-z" value="0" id="settings-translation-z">
+          <div class="description">The translation of the viewport in z direction in pixels. The value 0 means no translation, a positive value means translation towards the eye, a negative value means translation away from the eye.</div>
         </div>
         <h5>Content settings</h5>
         <div class="item">
@@ -95,6 +95,11 @@
           <div class="description">The position of the object in y direction.</div>
         </div>
         <div class="item">
+          Position in z direction:
+          <input name="position-z" value="0" id="object-position-z">
+          <div class="description">The position of the object in z direction.</div>
+        </div>
+        <div class="item">
           Velocity in x direction:
           <input name="velocity-x" value="0" id="object-velocity-x">
           <div class="description">The velocity of the object in x direction.</div>
@@ -103,6 +108,11 @@
           Velocity in y direction:
           <input name="velocity-y" value="0" id="object-velocity-y">
           <div class="description">The velocity of the object in y direction. </div>
+        </div>
+        <div class="item">
+          Velocity in z direction:
+          <input name="velocity-z" value="0" id="object-velocity-z">
+          <div class="description">The velocity of the object in z direction. </div>
         </div>
         <div class="item">
           Mass:
@@ -144,6 +154,11 @@
           <div class="description">The position of the object in y direction.</div>
         </div>
         <div class="item">
+          Position in z direction:
+          <input name="position-z" value="0" id="new-object-position-z">
+          <div class="description">The position of the object in z direction.</div>
+        </div>
+        <div class="item">
           Velocity in x direction:
           <input name="velocity-x" value="0" id="new-object-velocity-x">
           <div class="description">The velocity of the object in x direction.</div>
@@ -152,6 +167,11 @@
           Velocity in y direction:
           <input name="velocity-y" value="0" id="new-object-velocity-y">
           <div class="description">The velocity of the object in y direction. </div>
+        </div>
+        <div class="item">
+          Velocity in z direction:
+          <input name="velocity-z" value="0" id="new-object-velocity-z">
+          <div class="description">The velocity of the object in z direction. </div>
         </div>
         <div class="item">
           Mass:

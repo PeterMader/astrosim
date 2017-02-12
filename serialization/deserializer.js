@@ -22,6 +22,7 @@ module.exports = class Deserializer {
 
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
+      animation.translation[2] = data.viewport.translationZ
       animation.ratio = data.viewport.ratio
       animation.selectedObject = Body.fromSerialized(data.content.selectedObject)
 
@@ -38,6 +39,7 @@ module.exports = class Deserializer {
       (typeof data.viewport === 'object') &&
       (typeof data.viewport.translationX === 'number') && !isNaN(data.viewport.translationX) &&
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&
+      (typeof data.viewport.translationZ === 'number') && !isNaN(data.viewport.translationZ) &&
       (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&

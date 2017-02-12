@@ -19,7 +19,7 @@ module.exports = function () {
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
-    const factor = e.deltaY > 0 ? .5 : 2
+    const factor = e.deltaY > 0 ? -1 : 1
     const clientX = (e.clientX - canvas.offsetLeft) || (canvas.width / 2)
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
