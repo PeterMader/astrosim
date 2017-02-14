@@ -5,15 +5,7 @@ const ui = require('../ui/ui.js')
 
 module.exports = class Deserializer {
 
-  static deserialize (string) {
-    let data
-    try {
-      data = JSON.parse(string)
-    } catch (e) {
-      console.log('Error parsing the selected file: ', e)
-      return
-    }
-
+  static selectScene (data) {
     if (Deserializer.validateData(data)) {
       content.objects = []
       content.currentId = 0
@@ -29,12 +21,27 @@ module.exports = class Deserializer {
       ui.update()
       ui.pause()
     } else {
-      console.log('Invalid file!')
+      console.log('Error: Invalid scene.')
     }
+  }
+
+  static deserialize (string) {
+    let data
+    try {
+      data = JSON.parse(string)
+    } catch (e) {
+      console.log('Error parsing the selected file: ', e)
+      return
+    }
+
+    Deserializer.selectScene(data)
   }
 
   static validateData (data) {
     return (typeof data === 'object') &&
+      (typeof data.meta === 'object') &&
+      (typeof data.meta.name === 'string') &&
+      (typeof data.meta.description === 'string') &&
       (typeof data.viewport === 'object') &&
       (typeof data.viewport.translationX === 'number') && !isNaN(data.viewport.translationX) &&
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&

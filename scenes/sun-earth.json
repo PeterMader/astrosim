@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "name": "Sun and Earth",
+    "description": ""
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": [
+      {
+        "name": "Sun",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 0,
+        "mass": 1.9884e+30,
+        "radius": 1400000000,
+        "color": "#ffff00"
+      },
+      {
+        "name": "Earth",
+        "positionX": 148999995392,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 29780,
+        "mass": 5.974e+24,
+        "radius": 6000000,
+        "color": "#0000ff"
+      }
+    ]
+  }
+}

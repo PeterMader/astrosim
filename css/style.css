@@ -17,6 +17,15 @@ html, body {
   max-height: 100vh;
 }
 
+a {
+  color: #3477CC;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #1255AA;
+}
+
 .icon {
   background-position: center;
   background-repeat: no-repeat;
@@ -50,8 +59,12 @@ div.icon-before {
   background-image: url('../res/icon_export.png');
 }
 
-#open-deserialize-button {
-  background-image: url('../res/icon_import.png');
+#open-scene {
+  background-image: url('../res/icon_scene.png');
+}
+
+#open-about {
+  background-image: url('../res/icon_about.png');
 }
 
 #open-side-bar {
@@ -102,7 +115,7 @@ div.icon-before {
   display: block;
 }
 
-.dialog-closed, .side-bar-closed {
+.dialog-closed, .side-bar-closed, .hidden {
   display: none;
 }
 

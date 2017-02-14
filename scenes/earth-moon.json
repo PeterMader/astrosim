@@ -1,0 +1,16 @@
+{
+  "meta": {
+    "name": "Earth and Moon.",
+    "description": "Shows the moon orbiting the earth."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": []
+  }
+}

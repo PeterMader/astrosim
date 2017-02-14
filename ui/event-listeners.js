@@ -22,6 +22,9 @@ module.exports = function () {
   document.getElementById('open-new-object-dialog').addEventListener('click', () => {
     this.dialogs.newObjectDialog.open()
   })
+  document.getElementById('open-about').addEventListener('click', () => {
+    this.dialogs.aboutDialog.open()
+  })
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
     const index = content.objects.indexOf(object)
@@ -43,11 +46,11 @@ module.exports = function () {
     settingsDialog.setValues()
     settingsDialog.open()
   })
-  document.getElementById('open-deserialize-button').addEventListener('click', () => {
-    this.dialogs.deserializeDialog.open()
+  document.getElementById('open-scene').addEventListener('click', () => {
+    this.dialogs.sceneDialog.open()
   })
-  document.getElementById('cancel-deserialize').addEventListener('click', () => {
-    this.dialogs.deserializeDialog.close()
+  document.getElementById('cancel-scene').addEventListener('click', () => {
+    this.dialogs.sceneDialog.close()
   })
   document.getElementById('settings-cancel').addEventListener('click', () => {
     this.dialogs.settingsDialog.close()

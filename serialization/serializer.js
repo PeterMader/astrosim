@@ -7,6 +7,10 @@ module.exports = class Serializer {
   // create the data to serialize
   static createData () {
     const data = {}
+    data.meta = {
+      name: "AstroSim scene",
+      description: "Your own AstroSim scene."
+    }
     data.viewport = {
       translationX: animation.translation[0],
       translationY: animation.translation[1],
