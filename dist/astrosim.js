@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":20}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":23}],8:[function(require,module,exports){
 const Vec2 = require('./vec2.js')
 const Color = require('../animation/color.js')
 const {content} = require('../astrosim.js')
@@ -716,6 +716,63 @@ module.exports = class Vec2 {
 }
 
 },{}],11:[function(require,module,exports){
+module.exports={
+  "meta": {
+    "name": "Empty Scene",
+    "description": "Empty Scene."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": []
+  }
+}
+
+},{}],12:[function(require,module,exports){
+module.exports={
+  "meta": {
+    "name": "Sun and Earth",
+    "description": ""
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": [
+      {
+        "name": "Sun",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 0,
+        "mass": 1.9884e+30,
+        "radius": 1400000000,
+        "color": "#ffff00"
+      },
+      {
+        "name": "Earth",
+        "positionX": 148999995392,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 29780,
+        "mass": 5.974e+24,
+        "radius": 6000000,
+        "color": "#0000ff"
+      }
+    ]
+  }
+}
+
+},{}],13:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -723,15 +780,7 @@ const ui = require('../ui/ui.js')
 
 module.exports = class Deserializer {
 
-  static deserialize (string) {
-    let data
-    try {
-      data = JSON.parse(string)
-    } catch (e) {
-      console.log('Error parsing the selected file: ', e)
-      return
-    }
-
+  static selectScene (data) {
     if (Deserializer.validateData(data)) {
       content.objects = []
       content.currentId = 0
@@ -747,12 +796,27 @@ module.exports = class Deserializer {
       ui.update()
       ui.pause()
     } else {
-      console.log('Invalid file!')
+      console.log('Error: Invalid scene.')
     }
+  }
+
+  static deserialize (string) {
+    let data
+    try {
+      data = JSON.parse(string)
+    } catch (e) {
+      console.log('Error parsing the selected file: ', e)
+      return
+    }
+
+    Deserializer.selectScene(data)
   }
 
   static validateData (data) {
     return (typeof data === 'object') &&
+      (typeof data.meta === 'object') &&
+      (typeof data.meta.name === 'string') &&
+      (typeof data.meta.description === 'string') &&
       (typeof data.viewport === 'object') &&
       (typeof data.viewport.translationX === 'number') && !isNaN(data.viewport.translationX) &&
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&
@@ -766,7 +830,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":20}],12:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":23}],14:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -776,6 +840,10 @@ module.exports = class Serializer {
   // create the data to serialize
   static createData () {
     const data = {}
+    data.meta = {
+      name: "AstroSim scene",
+      description: "Your own AstroSim scene."
+    }
     data.viewport = {
       translationX: animation.translation[0],
       translationY: animation.translation[1],
@@ -805,25 +873,16 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":20}],13:[function(require,module,exports){
-const Deserializer = require('../../serialization/deserializer.js')
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":23}],15:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
-const deserializeDialog = module.exports = new Dialog(document.getElementById('deserialize-dialog'))
+const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
 
-// get the input elements
-const file = document.getElementById('deserialize-file')
-const reader = new FileReader()
-
-document.getElementById('deserialize').addEventListener('click', () => {
-  reader.onload = function () {
-    Deserializer.deserialize(reader.result)
-    deserializeDialog.close()
-  }
-  reader.readAsText(file.files[0])
+document.getElementById('about-submit').addEventListener('click', () => {
+  aboutDialog.close()
 })
 
-},{"../../serialization/deserializer.js":11,"./dialog.js":14}],14:[function(require,module,exports){
+},{"./dialog.js":16}],16:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 
@@ -915,23 +974,25 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":20}],15:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":23}],17:[function(require,module,exports){
 module.exports = {
 
+  aboutDialog: null,
   settingsDialog: null,
   objectDialog: null,
   newObjectDialog: null,
-  deserializeDialog: null,
+  sceneDialog: null,
 
   initialize () {
+    this.aboutDialog = require('./about-dialog.js')
     this.settingsDialog = require('./settings-dialog.js')
     this.objectDialog = require('./object-dialog.js')
     this.newObjectDialog = require('./new-object-dialog.js')
-    this.deserializeDialog = require('./deserialize-dialog.js')
+    this.sceneDialog = require('./scene-dialog.js')
   }
 }
 
-},{"./deserialize-dialog.js":13,"./new-object-dialog.js":16,"./object-dialog.js":17,"./settings-dialog.js":18}],16:[function(require,module,exports){
+},{"./about-dialog.js":15,"./new-object-dialog.js":18,"./object-dialog.js":19,"./scene-dialog.js":20,"./settings-dialog.js":21}],18:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -954,7 +1015,7 @@ const color = document.getElementById('new-object-color')
 // set the filter logic of the input elements
 newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
-newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
+newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
 document.getElementById('new-object-submit').addEventListener('click', () => {
   if (newObjectDialog.validate()) {
@@ -970,7 +1031,7 @@ document.getElementById('new-object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":14}],17:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":16}],19:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1029,7 +1090,62 @@ document.getElementById('object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":20,"./dialog.js":14}],18:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":23,"./dialog.js":16}],20:[function(require,module,exports){
+const Deserializer = require('../../serialization/deserializer.js')
+const Dialog = require('./dialog.js')
+
+const sceneDialog = module.exports = new Dialog(document.getElementById('scene-dialog'))
+
+const sceneNames = ['sun-earth.json']
+const scenes = [
+  require('../../scenes/sun-earth.json'),
+  require('../../scenes/empty.json')
+]
+
+// get the input elements
+const file = document.getElementById('deserialize-file')
+const info = document.getElementById('scene-info')
+const sceneName = document.getElementById('scene-name')
+const sceneDescription = document.getElementById('scene-description')
+const reader = new FileReader()
+const select = document.getElementById('deserialize-select')
+const list = document.getElementById('deserialize-default')
+const fileItem = document.getElementById('deserialize-file-item')
+
+scenes.forEach((scene) => {
+  const option = document.createElement('option')
+  option.value = scene.meta.name
+  option.textContent = scene.meta.name
+  list.appendChild(option)
+})
+
+select.addEventListener('change', () => {
+  if (select.selectedIndex === 0) {
+    info.classList.add('hidden')
+    fileItem.classList.remove('hidden')
+  } else {
+    fileItem.classList.add('hidden')
+    info.classList.remove('hidden')
+    const scene = scenes[select.selectedIndex - 1]
+    sceneName.textContent = scene.meta.name || sceneNames[select.selectedIndex - 1]
+    sceneDescription.textContent = scene.meta.description || sceneName.textContent
+  }
+})
+
+document.getElementById('load-scene').addEventListener('click', () => {
+  if (select.selectedIndex === 0) {
+    reader.onload = function () {
+      Deserializer.deserialize(reader.result)
+      sceneDialog.close()
+    }
+    reader.readAsText(file.files[0])
+  } else {
+    Deserializer.selectScene(scenes[select.selectedIndex - 1])
+    sceneDialog.close()
+  }
+})
+
+},{"../../scenes/empty.json":11,"../../scenes/sun-earth.json":12,"../../serialization/deserializer.js":13,"./dialog.js":16}],21:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1075,7 +1191,7 @@ document.getElementById('settings-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":20,"./dialog.js":14}],19:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":23,"./dialog.js":16}],22:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1100,6 +1216,9 @@ module.exports = function () {
   document.getElementById('open-new-object-dialog').addEventListener('click', () => {
     this.dialogs.newObjectDialog.open()
   })
+  document.getElementById('open-about').addEventListener('click', () => {
+    this.dialogs.aboutDialog.open()
+  })
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
     const index = content.objects.indexOf(object)
@@ -1121,11 +1240,11 @@ module.exports = function () {
     settingsDialog.setValues()
     settingsDialog.open()
   })
-  document.getElementById('open-deserialize-button').addEventListener('click', () => {
-    this.dialogs.deserializeDialog.open()
+  document.getElementById('open-scene').addEventListener('click', () => {
+    this.dialogs.sceneDialog.open()
   })
-  document.getElementById('cancel-deserialize').addEventListener('click', () => {
-    this.dialogs.deserializeDialog.close()
+  document.getElementById('cancel-scene').addEventListener('click', () => {
+    this.dialogs.sceneDialog.close()
   })
   document.getElementById('settings-cancel').addEventListener('click', () => {
     this.dialogs.settingsDialog.close()
@@ -1139,7 +1258,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":12,"../ui/ui.js":20}],20:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":14,"../ui/ui.js":23}],23:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
@@ -1177,7 +1296,6 @@ const ui = module.exports = ASTRO.ui = {
       item.addEventListener('click', (e) => {
         if (e.target !== selectButton) {
           // open properties dialog
-          ui.pause()
           content.editedObject = object
           const {objectDialog} = this.dialogs
           objectDialog.setValues()
@@ -1249,4 +1367,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":15,"./event-listeners.js":19}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":17,"./event-listeners.js":22}]},{},[7]);

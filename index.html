@@ -25,7 +25,8 @@
         <div class="main-button icon-before" id="open-settings-dialog">Settings</div>
         <div class="main-button icon-before" id="open-new-object-dialog">Create new object</div>
         <div class="main-button icon-before" id="serialize-button">Save scene</div>
-        <div class="main-button icon-before" id="open-deserialize-button">Load saved scene</div>
+        <div class="main-button icon-before" id="open-scene">Scene</div>
+        <div class="main-button icon-before" id="open-about">About AstroSim</div>
       </div>
       <h3>Objects</h3>
       <div id="object-list"></div>
@@ -33,16 +34,31 @@
 
     <div class="dialog-container">
 
-      <div id="deserialize-dialog">
-        <h3>Load saved scene</h3>
+      <div id="scene-dialog">
+        <h3>Scene</h3>
         <div class="item">
+          Select scene:
+          <select id="deserialize-select">
+            <optgroup label="Load saved scene">
+              <option>Select file</option>
+            </optgroup>
+            <optgroup id="deserialize-default" label="Predefined scenes">
+            </optgroup>
+          </select>
+          <div class="description">The location of the saved file.</div>
+        </div>
+        <div class="item" id="deserialize-file-item">
           Location of saved scene:
           <input name="file" id="deserialize-file" type="file">
           <div class="description">The location of the saved file.</div>
         </div>
+        <div class="item hidden" id="scene-info">
+          <h5 id="scene-name"></h5>
+          <div class="description" id="scene-description"></div>
+        </div>
         <div class="item">
-          <button type="button" id="deserialize">Load scene</button>
-          <button type="button" id="cancel-deserialize">Cancel</button>
+          <button type="button" id="load-scene">Load scene</button>
+          <button type="button" id="cancel-scene">Cancel</button>
         </div>
       </div>
 
@@ -171,6 +187,16 @@
         <div class="item">
           <button type="button" id="new-object-submit">Create new object</button>
           <button type="button" id="new-object-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <div id="about-dialog">
+        <h3>About AstroSim</h3>
+        <div class="item">
+          AstroSim is a project by Peter Mader. See the GitHub project at <a target="_blank" href="https://github.com/PeterMader/astrosim">https://github.com/PeterMader/astrosim</a>
+        </div>
+        <div class="item">
+          <button type="button" id="about-submit">OK</button>
         </div>
       </div>
 

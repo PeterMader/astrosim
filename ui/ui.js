@@ -35,7 +35,6 @@ const ui = module.exports = ASTRO.ui = {
       item.addEventListener('click', (e) => {
         if (e.target !== selectButton) {
           // open properties dialog
-          ui.pause()
           content.editedObject = object
           const {objectDialog} = this.dialogs
           objectDialog.setValues()
