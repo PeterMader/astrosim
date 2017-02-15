@@ -5,6 +5,13 @@ html, body {
   font-family: sans-serif;
 }
 
+body {
+  /* Preload the play icon. */
+  background-image: url('../res/icon_play.png');
+  background-repeat: no-repeat;
+  background-position: -9999px -9999px;
+}
+
 #side-bar {
   position: absolute;
   top: 0;

@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":23}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":26}],8:[function(require,module,exports){
 const Vec2 = require('./vec2.js')
 const Color = require('../animation/color.js')
 const {content} = require('../astrosim.js')
@@ -718,6 +718,24 @@ module.exports = class Vec2 {
 },{}],11:[function(require,module,exports){
 module.exports={
   "meta": {
+    "name": "Earth and Moon",
+    "description": "Shows the moon orbiting the earth."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": []
+  }
+}
+
+},{}],12:[function(require,module,exports){
+module.exports={
+  "meta": {
     "name": "Empty Scene",
     "description": "Empty Scene."
   },
@@ -733,7 +751,144 @@ module.exports={
   }
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
+module.exports=[ 
+require('./earth-moon.json'), 
+require('./empty.json'), 
+require('./solar-system.json'), 
+require('./sun-earth.json'), 
+] 
+
+},{"./earth-moon.json":11,"./empty.json":12,"./solar-system.json":14,"./sun-earth.json":15}],14:[function(require,module,exports){
+module.exports={
+  "meta": {
+    "name": "Solar System",
+    "description": "A scene containing the sun and our planets (including Pluto)."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": [
+      {
+        "name": "Sun",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 0,
+        "mass": 1.9884e30,
+        "radius": 1.4e9,
+        "color": "#ffff00"
+      },
+      {
+        "name": "Mercury",
+        "positionX": 5.7909e10,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 4.736e4,
+        "mass": 3.301e23,
+        "radius": 2.440e6,
+        "color": "#bb8800"
+      },
+      {
+        "name": "Venus",
+        "positionX": -1.0816e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -3.502e4,
+        "mass": 4.869e24,
+        "radius": 6.0518e6,
+        "color": "#dddd44"
+      },
+      {
+        "name": "Earth",
+        "positionX": 1.496e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 2.978e4,
+        "mass": 5.974e24,
+        "radius": 6.3674675e6,
+        "color": "#0000ff"
+      },
+      {
+        "name": "Moon",
+        "positionX": 1.492156e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 3.0803e4,
+        "mass": 7.349e22,
+        "radius": 1.738e6,
+        "color": "#888888"
+      },
+      {
+        "name": "Mars",
+        "positionX": -2.2799e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -2.413e4,
+        "mass": 6.419e23,
+        "radius": 3.3862e6,
+        "color": "#ff0000"
+      },
+      {
+        "name": "Jupiter",
+        "positionX": 7.7836e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 1.307e4,
+        "mass": 1.899e27,
+        "radius": 6.9173e7,
+        "color": "#bbaa88"
+      },
+      {
+        "name": "Saturn",
+        "positionX": -1.4335e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -9.69e3,
+        "mass": 5.685e26,
+        "radius": 5.7316e7,
+        "color": "#ffaa00"
+      },
+      {
+        "name": "Uranus",
+        "positionX": 2.8724e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 6.81e3,
+        "mass": 8.683e25,
+        "radius": 2.5266e7,
+        "color": "#dddfff"
+      },
+      {
+        "name": "Neptune",
+        "positionX": -4.4984e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -5.43e3,
+        "mass": 1.0243e26,
+        "radius": 2.45525e7,
+        "color": "#00045b"
+      },
+      {
+        "name": "Pluto",
+        "positionX": 5.9064e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 4.67e3,
+        "mass": 1.303e22,
+        "radius": 2.374e3,
+        "color": "#777733"
+      }
+    ]
+  }
+}
+
+},{}],15:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Sun and Earth",
@@ -772,7 +927,7 @@ module.exports={
   }
 }
 
-},{}],13:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -830,7 +985,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":23}],14:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":26}],17:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -873,7 +1028,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":23}],15:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":26}],18:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
@@ -882,7 +1037,7 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":16}],16:[function(require,module,exports){
+},{"./dialog.js":19}],19:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 
@@ -974,7 +1129,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":23}],17:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":26}],20:[function(require,module,exports){
 module.exports = {
 
   aboutDialog: null,
@@ -992,7 +1147,7 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":15,"./new-object-dialog.js":18,"./object-dialog.js":19,"./scene-dialog.js":20,"./settings-dialog.js":21}],18:[function(require,module,exports){
+},{"./about-dialog.js":18,"./new-object-dialog.js":21,"./object-dialog.js":22,"./scene-dialog.js":23,"./settings-dialog.js":24}],21:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1031,7 +1186,7 @@ document.getElementById('new-object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":16}],19:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":19}],22:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1090,17 +1245,12 @@ document.getElementById('object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":23,"./dialog.js":16}],20:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":19}],23:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
+const scenes = require('../../scenes/list.js')
 
 const sceneDialog = module.exports = new Dialog(document.getElementById('scene-dialog'))
-
-const sceneNames = ['sun-earth.json']
-const scenes = [
-  require('../../scenes/sun-earth.json'),
-  require('../../scenes/empty.json')
-]
 
 // get the input elements
 const file = document.getElementById('deserialize-file')
@@ -1145,7 +1295,7 @@ document.getElementById('load-scene').addEventListener('click', () => {
   }
 })
 
-},{"../../scenes/empty.json":11,"../../scenes/sun-earth.json":12,"../../serialization/deserializer.js":13,"./dialog.js":16}],21:[function(require,module,exports){
+},{"../../scenes/list.js":13,"../../serialization/deserializer.js":16,"./dialog.js":19}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1191,7 +1341,7 @@ document.getElementById('settings-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":23,"./dialog.js":16}],22:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":19}],25:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1258,7 +1408,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":14,"../ui/ui.js":23}],23:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":17,"../ui/ui.js":26}],26:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
@@ -1367,4 +1517,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":17,"./event-listeners.js":22}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":20,"./event-listeners.js":25}]},{},[7]);
