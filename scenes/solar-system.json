@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "name": "Solar System",
+    "description": "A scene containing the sun and our planets (including Pluto)."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e6,
+    "objects": [
+      {
+        "name": "Sun",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 0,
+        "mass": 1.9884e30,
+        "radius": 1.4e9,
+        "color": "#ffff00"
+      },
+      {
+        "name": "Mercury",
+        "positionX": 5.7909e10,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 4.736e4,
+        "mass": 3.301e23,
+        "radius": 2.440e6,
+        "color": "#bb8800"
+      },
+      {
+        "name": "Venus",
+        "positionX": -1.0816e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -3.502e4,
+        "mass": 4.869e24,
+        "radius": 6.0518e6,
+        "color": "#dddd44"
+      },
+      {
+        "name": "Earth",
+        "positionX": 1.496e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 2.978e4,
+        "mass": 5.974e24,
+        "radius": 6.3674675e6,
+        "color": "#0000ff"
+      },
+      {
+        "name": "Moon",
+        "positionX": 1.492156e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 3.0803e4,
+        "mass": 7.349e22,
+        "radius": 1.738e6,
+        "color": "#888888"
+      },
+      {
+        "name": "Mars",
+        "positionX": -2.2799e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -2.413e4,
+        "mass": 6.419e23,
+        "radius": 3.3862e6,
+        "color": "#ff0000"
+      },
+      {
+        "name": "Jupiter",
+        "positionX": 7.7836e11,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 1.307e4,
+        "mass": 1.899e27,
+        "radius": 6.9173e7,
+        "color": "#bbaa88"
+      },
+      {
+        "name": "Saturn",
+        "positionX": -1.4335e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -9.69e3,
+        "mass": 5.685e26,
+        "radius": 5.7316e7,
+        "color": "#ffaa00"
+      },
+      {
+        "name": "Uranus",
+        "positionX": 2.8724e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 6.81e3,
+        "mass": 8.683e25,
+        "radius": 2.5266e7,
+        "color": "#dddfff"
+      },
+      {
+        "name": "Neptune",
+        "positionX": -4.4984e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -5.43e3,
+        "mass": 1.0243e26,
+        "radius": 2.45525e7,
+        "color": "#00045b"
+      },
+      {
+        "name": "Pluto",
+        "positionX": 5.9064e12,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 4.67e3,
+        "mass": 1.303e22,
+        "radius": 2.374e3,
+        "color": "#777733"
+      }
+    ]
+  }
+}

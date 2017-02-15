@@ -1,13 +1,8 @@
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
+const scenes = require('../../scenes/list.js')
 
 const sceneDialog = module.exports = new Dialog(document.getElementById('scene-dialog'))
-
-const sceneNames = ['sun-earth.json']
-const scenes = [
-  require('../../scenes/sun-earth.json'),
-  require('../../scenes/empty.json')
-]
 
 // get the input elements
 const file = document.getElementById('deserialize-file')
