@@ -62,4 +62,18 @@ module.exports = function () {
   document.getElementById('close-side-bar').addEventListener('click', () => {
     sideBar.classList.add('side-bar-closed')
   })
+
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      if (ui.dialogs.openDialog) {
+        ui.dialogs.openDialog.submit()
+      } else {
+        if (mainLoop.running) {
+          ui.pause()
+        } else {
+          ui.unpause()
+        }
+      }
+    }
+  })
 }

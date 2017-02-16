@@ -1,5 +1,6 @@
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
+const dialogManager = require('./dialog-manager.js')
 
 module.exports = class Dialog {
   constructor (element) {
@@ -71,6 +72,7 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-open')
     this.element.classList.remove('dialog-closed')
     this.opened = true
+    dialogManager.openDialog = this
 
     animation.pause()
   }
@@ -79,8 +81,15 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-closed')
     this.opened = false
 
+    dialogManager.openDialog = null
+
     if (ui.isPlaying) {
       animation.unpause()
+    }
+  }
+  submit () {
+    if (this.validate()) {
+      this.close()
     }
   }
   static greaterThanZero (input, value) {

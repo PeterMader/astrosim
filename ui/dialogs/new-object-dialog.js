@@ -22,7 +22,7 @@ newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, 
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
-document.getElementById('new-object-submit').addEventListener('click', () => {
+document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))
     const velocity = Vec2.create(Number(velocityX.value), Number(velocityY.value))
