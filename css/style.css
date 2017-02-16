@@ -54,6 +54,14 @@ div.icon-before {
   background-repeat: no-repeat;
 }
 
+.center-button {
+  background-position: center;
+  height: 30px;
+  width: 30px;
+  background-repeat: no-repeat;
+  background-image: url('../res/icon_center.png');
+}
+
 .pause-button {
   background-image: url('../res/icon_pause.png');
 }

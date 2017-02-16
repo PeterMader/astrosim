@@ -1503,7 +1503,7 @@ const ui = module.exports = ASTRO.ui = {
       contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
       const selectButton = document.createElement('button')
-      selectButton.textContent = 'Center'
+      selectButton.classList.add('center-button')
       selectButton.addEventListener('click', () => {
         if (animation.selectedObject === object) {
           animation.selectedObject = null
