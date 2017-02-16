@@ -1,0 +1,1 @@
+* Veranschaulichung von siderischem und synodischem Monat: wenn der Mond einen Kreis vollendet hat, ist ein siderischer Monat vergangen, wenn der Mond die Bahn der Erde schneidet, ein synodischer (?).

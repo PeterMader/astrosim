@@ -38,7 +38,7 @@ a {
 }
 
 a:hover {
-  color: #1255AA;
+  color: #132C75;
 }
 
 .icon {
@@ -58,8 +58,14 @@ div.icon-before {
   background-position: center;
   height: 30px;
   width: 30px;
+  padding: 0;
+  border-radius: 4px;
   background-repeat: no-repeat;
   background-image: url('../res/icon_center.png');
+}
+
+.selected-object .center-button {
+  background-color: #132C75;
 }
 
 .pause-button {
@@ -121,11 +127,6 @@ div.icon-before {
 
 .selected-object {
   background: #EEEEEE;
-}
-
-.selected-object button {
-  padding: 5px 9px 3px 11px;
-  background: #1255AA;
 }
 
 .dialog {

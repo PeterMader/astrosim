@@ -1051,7 +1051,11 @@ module.exports = class Serializer {
 },{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":26}],18:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
-module.exports = new Dialog(document.getElementById('about-dialog'))
+const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
+
+document.getElementById('about-submit').addEventListener('click', () => {
+  aboutDialog.close()
+})
 
 },{"./dialog.js":20}],19:[function(require,module,exports){
 module.exports = {
