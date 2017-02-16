@@ -6,6 +6,8 @@ module.exports = {
   newObjectDialog: null,
   sceneDialog: null,
 
+  openDialog: null,
+
   initialize () {
     this.aboutDialog = require('./about-dialog.js')
     this.settingsDialog = require('./settings-dialog.js')

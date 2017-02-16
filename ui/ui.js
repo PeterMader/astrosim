@@ -9,7 +9,7 @@ const ui = module.exports = ASTRO.ui = {
   selectedObject: null,
   isPlaying: true,
 
-  dialogs: require('./dialogs/init-dialogs.js'),
+  dialogs: require('./dialogs/dialog-manager.js'),
 
   initialize () {
     this.list = document.getElementById('object-list')

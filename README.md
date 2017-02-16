@@ -6,3 +6,6 @@ A simulation of the movement of the planets - [https://petermader.github.io/astr
 
 ## Adding pre-defined scenes
 You're welcome to contribute new scenes that are visible as "pre-defined scenes" in the scene dialog!
+
+## Keyboard shortcuts
+You can find a list of available keyboard shortcuts [docs/keyboard-shortcuts.md](here).

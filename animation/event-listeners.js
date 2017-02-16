@@ -1,4 +1,6 @@
 const animation = require('./animation.js')
+const {mainLoop} = require('../astrosim.js')
+const dialogManager = require('../ui/dialogs/dialog-manager.js')
 
 module.exports = function () {
   const {canvas} = this
@@ -42,5 +44,24 @@ module.exports = function () {
   canvas.addEventListener('mouseup', translate)
   document.body.addEventListener('mouseup', () => {
     mouseHeld = false
+  })
+  document.addEventListener('keyup', (e) => {
+    if (!dialogManager.openDialog) {
+      // canvas is visible
+      const translation = e.shiftKey ? 10 : 100
+      if (e.key === 'ArrowUp') {
+        animation.translate(0, -translation)
+      } else if (e.key === 'ArrowDown') {
+        animation.translate(0, translation)
+      } else if (e.key === 'ArrowLeft') {
+        animation.translate(-translation, 0)
+      } else if (e.key === 'ArrowRight') {
+        animation.translate(translation, 0)
+      } else if (e.key === '+' || e.key === '*') {
+        animation.scale(e.shiftKey ? 1.05 : 2, 0, 0)
+      } else if (e.key === '-' || e.key === '_') {
+        animation.scale(e.shiftKey ? .95 : .5, 0, 0)
+      }
+    }
   })
 }
