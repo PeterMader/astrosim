@@ -9,7 +9,7 @@
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": [
       {

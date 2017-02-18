@@ -19,6 +19,8 @@ module.exports = class Body {
 
     this.history[0] = position[0]
     this.history[1] = position[1]
+
+    this.forces = []
   }
 
   applyForce (force) {
@@ -56,6 +58,8 @@ module.exports = class Body {
     }
   }
 
+  saveForce (body, force) {}
+
   clearHistory () {
     this.historyIndex = 0
     this.historyOverflow = false
@@ -89,8 +93,8 @@ module.exports = class Body {
       const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
 
       // remove the two colliding objects
-      objects.splice(bodyIndex, 1)
-      objects.splice(objects.indexOf(this), 1)
+      content.remove(body)
+      content.remove(this)
 
       // calculate the velocity and the color of the new object
       const thisMomentum = Vec2.scale(this.velocity, this.mass, ASTRO.content.temp2)
@@ -111,9 +115,10 @@ module.exports = class Body {
       )
 
       // move the bodies
-      // body.applyForce(force)
       Vec2.scale(force, -1, force)
       this.applyForce(force)
+
+      this.saveForce(body, force)
     }
   }
 

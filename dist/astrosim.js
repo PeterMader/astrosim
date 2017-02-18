@@ -58,7 +58,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":10,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec2.js":11,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -190,7 +190,7 @@ module.exports = function () {
   })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":19,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":20,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -250,6 +250,7 @@ module.exports = class Loop {
 const content = require('../content/content.js')
 const animation = require('./animation.js')
 const Body = require('../content/body.js')
+const ui = require('../ui/ui.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.drawCircle = function (x, y, radius, color) {
@@ -294,9 +295,9 @@ animation.render = function () {
   // clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  if (animation.selectedObject instanceof Body) {
+  if (ui.selectedObjects.length > 0) {
     // center the canvas at the selected object's center
-    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
+    this.center(Vec2.scale(Vec2.center(ui.selectedObjects.map((object) => object.position), content.temp1), 1 / content.METERS_PER_PIXEL, content.temp1))
   }
 
   if (objects.length > 0) {
@@ -353,7 +354,7 @@ animation.render = function () {
   this.drawControls()
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":10,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":27,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
 const Vec2 = require('../content/vec2.js')
 
@@ -398,7 +399,7 @@ animation.scale = function (factor, centerX, centerY) {
   animation.shouldRender = true
 }
 
-},{"../content/vec2.js":10,"./animation.js":1}],7:[function(require,module,exports){
+},{"../content/vec2.js":11,"./animation.js":1}],7:[function(require,module,exports){
 const Loop = require('./animation/loop.js')
 
 const ASTRO = module.exports = {
@@ -420,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":26}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":27}],8:[function(require,module,exports){
 const Vec2 = require('./vec2.js')
 const Color = require('../animation/color.js')
 const {content} = require('../astrosim.js')
@@ -442,6 +443,8 @@ module.exports = class Body {
 
     this.history[0] = position[0]
     this.history[1] = position[1]
+
+    this.forces = []
   }
 
   applyForce (force) {
@@ -479,6 +482,8 @@ module.exports = class Body {
     }
   }
 
+  saveForce (body, force) {}
+
   clearHistory () {
     this.historyIndex = 0
     this.historyOverflow = false
@@ -512,8 +517,8 @@ module.exports = class Body {
       const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
 
       // remove the two colliding objects
-      objects.splice(bodyIndex, 1)
-      objects.splice(objects.indexOf(this), 1)
+      content.remove(body)
+      content.remove(this)
 
       // calculate the velocity and the color of the new object
       const thisMomentum = Vec2.scale(this.velocity, this.mass, ASTRO.content.temp2)
@@ -534,9 +539,10 @@ module.exports = class Body {
       )
 
       // move the bodies
-      // body.applyForce(force)
       Vec2.scale(force, -1, force)
       this.applyForce(force)
+
+      this.saveForce(body, force)
     }
   }
 
@@ -560,9 +566,10 @@ module.exports = class Body {
   }
 }
 
-},{"../animation/color.js":2,"../astrosim.js":7,"./vec2.js":10}],9:[function(require,module,exports){
+},{"../animation/color.js":2,"../astrosim.js":7,"./vec2.js":11}],9:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
+const History = require('./history.js')
 const Vec2 = require('./vec2.js')
 
 const content = module.exports = ASTRO.content = {
@@ -585,23 +592,38 @@ const content = module.exports = ASTRO.content = {
   temp2: Vec2.create(),
   temp3: Vec2.create(),
 
+  forceHistories: {},
+  distanceHistories: {},
+
   initialize () {
     this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
   },
 
   // saves all the objects passed to it and displays them
   add () {
+    const {objects} = this
     let index
     for (index in arguments) {
       const object = arguments[index]
-      this.objects.push(object)
+      objects.push(object)
       object.id = this.currentId += 1
+
+      this.forceHistories[object.id] = objects.map((item) => {
+        return new History()
+      })
+      this.distanceHistories[object.id] = new History()
     }
     ASTRO.ui.update()
   },
+
+  // removes an object from the object list
+  remove (item) {
+    const {objects} = this
+    objects.splice(objects.indexOf(item), 1)
+  },
+
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    this.temp1[0] = this.temp1[1] = this.temp2[0] = this.temp2[1] = this.temp3[0] = this.temp3[1] = 0
     this.pendingTicks += this.TICKS_PER_FRAME
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
@@ -624,19 +646,43 @@ const content = module.exports = ASTRO.content = {
       this.pendingTicks -= 1
     }
   },
+
   // calculates the momentum of all objects
   momentum () {
     return this.objects.reduce((acc, obj) => {
       return Vec2.add(acc, Vec2.scale(obj.velocity, obj.mass))
     }, Vec2.create())
   },
+
   // calculates the velocity of the system
   velocity () {
     return Vec2.scale(this.momentum(), 1 / this.objects.reduce((acc, obj) => acc + obj.mass, 0))
   }
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"./vec2.js":10}],10:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"./history.js":10,"./vec2.js":11}],10:[function(require,module,exports){
+const History = module.exports = class {
+
+  constructor () {
+    this.average = 0
+    this.min = 0
+    this.max = 0
+    this.count = 0
+  }
+
+  add (value) {
+    if (value < this.min) {
+      this.min = value
+    }
+    if (value > this.max) {
+      this.max = value
+    }
+    this.average = (this.average * this.count + value) / (this.count += 1)
+  }
+
+}
+
+},{}],11:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -666,6 +712,22 @@ module.exports = class Vec2 {
     const factor = w2 / (w1 + w2)
     out[0] = factor * ((b[0] - a[0]) || 1e-10) + a[0]
     out[1] = factor * ((b[1] - a[1]) || 1e-10) + a[1]
+    return out
+  }
+
+  static center (list, result) {
+    let out = result
+    if (!out) {
+      out = Vec2.create()
+    }
+    let index, x = 0, y = 0, count = 0
+    for (index in list) {
+      x = (x * count + list[index][0]) / (count + 1)
+      y = (y * count + list[index][1]) / (count + 1)
+      count += 1
+    }
+    out[0] = x
+    out[1] = y
     return out
   }
 
@@ -735,7 +797,7 @@ module.exports = class Vec2 {
 
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Earth and Moon",
@@ -744,16 +806,37 @@ module.exports={
   "viewport": {
     "translationX": 0,
     "translationY": 0,
-    "ratio": 1
+    "ratio": 2.5e2,
   },
   "content": {
-    "selectedObject": null,
-    "timeFactor": 1e6,
-    "objects": []
+    "selectedObjectIndices": [],
+    "timeFactor": 1e5,
+    "objects": [
+      {
+        "name": "Earth",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -1.258e1,
+        "mass": 5.974e24,
+        "radius": 6.3674675e6,
+        "color": "#0000ff"
+      },
+      {
+        "name": "Moon",
+        "positionX": 3.844e8,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 1.023e3,
+        "mass": 7.349e22,
+        "radius": 1.738e6,
+        "color": "#888888"
+      }
+    ]
   }
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Empty Scene",
@@ -765,13 +848,13 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": []
   }
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports=[ 
 require('./earth-moon.json'), 
 require('./empty.json'), 
@@ -779,7 +862,7 @@ require('./solar-system.json'),
 require('./sun-earth.json'), 
 ] 
 
-},{"./earth-moon.json":11,"./empty.json":12,"./solar-system.json":14,"./sun-earth.json":15}],14:[function(require,module,exports){
+},{"./earth-moon.json":12,"./empty.json":13,"./solar-system.json":15,"./sun-earth.json":16}],15:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Solar System",
@@ -791,7 +874,7 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": [
       {
@@ -908,7 +991,7 @@ module.exports={
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Sun and Earth",
@@ -920,7 +1003,7 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": [
       {
@@ -947,7 +1030,7 @@ module.exports={
   }
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -965,7 +1048,11 @@ module.exports = class Deserializer {
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
       animation.ratio = data.viewport.ratio
-      animation.selectedObject = Body.fromSerialized(data.content.selectedObject)
+      animation.width = animation.canvas.width * animation.ratio
+      animation.height = animation.canvas.height * animation.ratio
+      ui.selectedObjects = data.content.selectedObjectIndices.map((index) => {
+        return content.objects[index]
+      })
 
       animation.shouldRender = true
       ui.update()
@@ -998,14 +1085,15 @@ module.exports = class Deserializer {
       (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&
-      (typeof data.content.selectedObject === 'object') &&
       (Array.isArray(data.content.objects)) &&
+      (Array.isArray(data.content.selectedObjectIndices)) &&
+      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) && 
       data.content.objects.filter((item) => typeof item === 'object')
   }
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":26}],17:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":27}],18:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1025,7 +1113,7 @@ module.exports = class Serializer {
       ratio: animation.ratio
     }
     data.content = {
-      selectedObject: ui.selectedObject ? ui.selectedObject.serialize() : null,
+      selectedObjectIndices: ui.selectedObjects.map((body) => content.objects.indexOf(body)).sort(),
       objects: content.objects.map((body) => body.serialize()),
       timeFactor: content.TIME_FACTOR
     }
@@ -1048,7 +1136,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":26}],18:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":27}],19:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
@@ -1057,7 +1145,7 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":20}],19:[function(require,module,exports){
+},{"./dialog.js":21}],20:[function(require,module,exports){
 module.exports = {
 
   aboutDialog: null,
@@ -1077,7 +1165,7 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":18,"./new-object-dialog.js":21,"./object-dialog.js":22,"./scene-dialog.js":23,"./settings-dialog.js":24}],20:[function(require,module,exports){
+},{"./about-dialog.js":19,"./new-object-dialog.js":22,"./object-dialog.js":23,"./scene-dialog.js":24,"./settings-dialog.js":25}],21:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 const dialogManager = require('./dialog-manager.js')
@@ -1178,7 +1266,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":26,"./dialog-manager.js":19}],21:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":27,"./dialog-manager.js":20}],22:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1217,7 +1305,7 @@ document.getElementById('new-object-submit').addEventListener('click', newObject
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":20}],22:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":11,"./dialog.js":21}],23:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1276,7 +1364,7 @@ document.getElementById('object-submit').addEventListener('click', objectDialog.
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":20}],23:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],24:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1326,7 +1414,7 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
   }
 })
 
-},{"../../scenes/list.js":13,"../../serialization/deserializer.js":16,"./dialog.js":20}],24:[function(require,module,exports){
+},{"../../scenes/list.js":14,"../../serialization/deserializer.js":17,"./dialog.js":21}],25:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1372,7 +1460,7 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":20}],25:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],26:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1453,7 +1541,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":17,"../ui/ui.js":26}],26:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":18,"../ui/ui.js":27}],27:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
@@ -1462,7 +1550,7 @@ const animation = require('../animation/animation.js')
 
 const ui = module.exports = ASTRO.ui = {
 
-  selectedObject: null,
+  selectedObjects: [],
   isPlaying: true,
 
   dialogs: require('./dialogs/dialog-manager.js'),
@@ -1488,15 +1576,6 @@ const ui = module.exports = ASTRO.ui = {
 
       const item = document.createElement('div')
       item.classList.add('object-list-item')
-      item.addEventListener('click', (e) => {
-        if (e.target !== selectButton) {
-          // open properties dialog
-          content.editedObject = object
-          const {objectDialog} = this.dialogs
-          objectDialog.setValues()
-          objectDialog.open()
-        }
-      })
 
       const beforeItem = document.createElement('div')
       beforeItem.classList.add('object-list-item-before')
@@ -1506,40 +1585,54 @@ const ui = module.exports = ASTRO.ui = {
       contentElt.appendChild(beforeItem)
       contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
+      const optionsButton = document.createElement('button')
+      optionsButton.classList.add('edit-button')
+      optionsButton.addEventListener('click', () => {
+        // open properties dialog
+        content.editedObject = object
+        const {objectDialog} = this.dialogs
+        objectDialog.setValues()
+        objectDialog.open()
+      })
+
       const selectButton = document.createElement('button')
       selectButton.classList.add('center-button')
       selectButton.addEventListener('click', () => {
-        if (animation.selectedObject === object) {
-          animation.selectedObject = null
+        // add object to selection
+        const {selectedObjects} = ui
+        let selectionIndex
+        if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
+          selectedObjects.splice(selectionIndex, 1)
+          item.classList.remove('selected-object')
         } else {
-          animation.selectedObject = object
+          selectedObjects.push(object)
+          item.classList.add('selected-object')
         }
-        this.updateSelection()
+
         animation.shouldRender = true
       })
 
+      const buttonWrapper = document.createElement('div')
+      buttonWrapper.appendChild(optionsButton)
+      buttonWrapper.appendChild(selectButton)
+
       item.appendChild(contentElt)
-      item.appendChild(selectButton)
+      item.appendChild(buttonWrapper)
       list.appendChild(item)
     }
 
     this.updateSelection()
   },
   updateSelection () {
-    const selection = animation.selectedObject
-    if (selection !== null && !(selection instanceof Body)) {
-      return
-    }
-
-    const index = content.objects.indexOf(selection)
-    if (index < 0) {
-      animation.selectedObject = null
-    }
+    const selection = ui.selectedObjects
+    const selectionIndices = selection.map((object) => {
+      return content.objects.indexOf(object)
+    })
     const {list} = this
     Array.prototype.slice.call(list.children).forEach((item, itemIndex) => {
-      if (index === itemIndex) {
+      if (selectionIndices.indexOf(itemIndex) > -1) {
         item.classList.add('selected-object')
-      } else if (item.classList.contains('selected-object')) {
+      } else {
         item.classList.remove('selected-object')
       }
     })
@@ -1562,4 +1655,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":19,"./event-listeners.js":25}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":20,"./event-listeners.js":26}]},{},[7]);

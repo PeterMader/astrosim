@@ -64,6 +64,17 @@ div.icon-before {
   background-image: url('../res/icon_center.png');
 }
 
+.edit-button {
+  background-position: center;
+  height: 30px;
+  width: 30px;
+  line-height: 30px;
+  padding: 0;
+  border-radius: 4px;
+  background-repeat: no-repeat;
+  background-image: url('../res/icon_options.png');
+}
+
 .selected-object .center-button {
   background-color: #132C75;
 }
@@ -184,7 +195,6 @@ h5 {
 }
 
 .object-list-item {
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;

@@ -1,6 +1,7 @@
 const content = require('../content/content.js')
 const animation = require('./animation.js')
 const Body = require('../content/body.js')
+const ui = require('../ui/ui.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.drawCircle = function (x, y, radius, color) {
@@ -45,9 +46,9 @@ animation.render = function () {
   // clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  if (animation.selectedObject instanceof Body) {
+  if (ui.selectedObjects.length > 0) {
     // center the canvas at the selected object's center
-    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
+    this.center(Vec2.scale(Vec2.center(ui.selectedObjects.map((object) => object.position), content.temp1), 1 / content.METERS_PER_PIXEL, content.temp1))
   }
 
   if (objects.length > 0) {

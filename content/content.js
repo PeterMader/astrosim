@@ -1,5 +1,6 @@
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
+const History = require('./history.js')
 const Vec2 = require('./vec2.js')
 
 const content = module.exports = ASTRO.content = {
@@ -22,23 +23,38 @@ const content = module.exports = ASTRO.content = {
   temp2: Vec2.create(),
   temp3: Vec2.create(),
 
+  forceHistories: {},
+  distanceHistories: {},
+
   initialize () {
     this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
   },
 
   // saves all the objects passed to it and displays them
   add () {
+    const {objects} = this
     let index
     for (index in arguments) {
       const object = arguments[index]
-      this.objects.push(object)
+      objects.push(object)
       object.id = this.currentId += 1
+
+      this.forceHistories[object.id] = objects.map((item) => {
+        return new History()
+      })
+      this.distanceHistories[object.id] = new History()
     }
     ASTRO.ui.update()
   },
+
+  // removes an object from the object list
+  remove (item) {
+    const {objects} = this
+    objects.splice(objects.indexOf(item), 1)
+  },
+
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    this.temp1[0] = this.temp1[1] = this.temp2[0] = this.temp2[1] = this.temp3[0] = this.temp3[1] = 0
     this.pendingTicks += this.TICKS_PER_FRAME
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
@@ -61,12 +77,14 @@ const content = module.exports = ASTRO.content = {
       this.pendingTicks -= 1
     }
   },
+
   // calculates the momentum of all objects
   momentum () {
     return this.objects.reduce((acc, obj) => {
       return Vec2.add(acc, Vec2.scale(obj.velocity, obj.mass))
     }, Vec2.create())
   },
+
   // calculates the velocity of the system
   velocity () {
     return Vec2.scale(this.momentum(), 1 / this.objects.reduce((acc, obj) => acc + obj.mass, 0))

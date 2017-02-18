@@ -6,7 +6,7 @@ const animation = require('../animation/animation.js')
 
 const ui = module.exports = ASTRO.ui = {
 
-  selectedObject: null,
+  selectedObjects: [],
   isPlaying: true,
 
   dialogs: require('./dialogs/dialog-manager.js'),
@@ -32,15 +32,6 @@ const ui = module.exports = ASTRO.ui = {
 
       const item = document.createElement('div')
       item.classList.add('object-list-item')
-      item.addEventListener('click', (e) => {
-        if (e.target !== selectButton) {
-          // open properties dialog
-          content.editedObject = object
-          const {objectDialog} = this.dialogs
-          objectDialog.setValues()
-          objectDialog.open()
-        }
-      })
 
       const beforeItem = document.createElement('div')
       beforeItem.classList.add('object-list-item-before')
@@ -50,40 +41,54 @@ const ui = module.exports = ASTRO.ui = {
       contentElt.appendChild(beforeItem)
       contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
+      const optionsButton = document.createElement('button')
+      optionsButton.classList.add('edit-button')
+      optionsButton.addEventListener('click', () => {
+        // open properties dialog
+        content.editedObject = object
+        const {objectDialog} = this.dialogs
+        objectDialog.setValues()
+        objectDialog.open()
+      })
+
       const selectButton = document.createElement('button')
       selectButton.classList.add('center-button')
       selectButton.addEventListener('click', () => {
-        if (animation.selectedObject === object) {
-          animation.selectedObject = null
+        // add object to selection
+        const {selectedObjects} = ui
+        let selectionIndex
+        if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
+          selectedObjects.splice(selectionIndex, 1)
+          item.classList.remove('selected-object')
         } else {
-          animation.selectedObject = object
+          selectedObjects.push(object)
+          item.classList.add('selected-object')
         }
-        this.updateSelection()
+
         animation.shouldRender = true
       })
 
+      const buttonWrapper = document.createElement('div')
+      buttonWrapper.appendChild(optionsButton)
+      buttonWrapper.appendChild(selectButton)
+
       item.appendChild(contentElt)
-      item.appendChild(selectButton)
+      item.appendChild(buttonWrapper)
       list.appendChild(item)
     }
 
     this.updateSelection()
   },
   updateSelection () {
-    const selection = animation.selectedObject
-    if (selection !== null && !(selection instanceof Body)) {
-      return
-    }
-
-    const index = content.objects.indexOf(selection)
-    if (index < 0) {
-      animation.selectedObject = null
-    }
+    const selection = ui.selectedObjects
+    const selectionIndices = selection.map((object) => {
+      return content.objects.indexOf(object)
+    })
     const {list} = this
     Array.prototype.slice.call(list.children).forEach((item, itemIndex) => {
-      if (index === itemIndex) {
+      if (selectionIndices.indexOf(itemIndex) > -1) {
         item.classList.add('selected-object')
-      } else if (item.classList.contains('selected-object')) {
+      } else {
         item.classList.remove('selected-object')
       }
     })
