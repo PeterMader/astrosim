@@ -1,19 +1,23 @@
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
-const content = require('../content/content.js')
+let content
 const Body = require('../content/body.js')
 const animation = require('../animation/animation.js')
 
 const ui = module.exports = ASTRO.ui = {
 
   selectedObjects: [],
+  historyObject: null,
   isPlaying: true,
 
   dialogs: require('./dialogs/dialog-manager.js'),
 
   initialize () {
     this.list = document.getElementById('object-list')
+    this.historyTable = document.getElementById('history')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
+
+    content = require('../content/content.js')
 
     require('./event-listeners.js').call(this)
     this.dialogs.initialize()
@@ -51,9 +55,9 @@ const ui = module.exports = ASTRO.ui = {
         objectDialog.open()
       })
 
-      const selectButton = document.createElement('button')
-      selectButton.classList.add('center-button')
-      selectButton.addEventListener('click', () => {
+      const centerButton = document.createElement('button')
+      centerButton.classList.add('center-button')
+      centerButton.addEventListener('click', () => {
         // add object to selection
         const {selectedObjects} = ui
         let selectionIndex
@@ -70,7 +74,7 @@ const ui = module.exports = ASTRO.ui = {
 
       const buttonWrapper = document.createElement('div')
       buttonWrapper.appendChild(optionsButton)
-      buttonWrapper.appendChild(selectButton)
+      buttonWrapper.appendChild(centerButton)
 
       item.appendChild(contentElt)
       item.appendChild(buttonWrapper)
@@ -79,19 +83,94 @@ const ui = module.exports = ASTRO.ui = {
 
     this.updateSelection()
   },
+
   updateSelection () {
     const selection = ui.selectedObjects
-    const selectionIndices = selection.map((object) => {
-      return content.objects.indexOf(object)
-    })
+    const selectionIndices = selection.map((object, index) => index)
     const {list} = this
-    Array.prototype.slice.call(list.children).forEach((item, itemIndex) => {
-      if (selectionIndices.indexOf(itemIndex) > -1) {
+    const children = Array.prototype.slice.call(list.children)
+    const {length} = children
+    let index
+    for (index = 0; index < length; index += 1) {
+      const item = children[index]
+      if (selectionIndices.indexOf(index) > -1) {
         item.classList.add('selected-object')
       } else {
         item.classList.remove('selected-object')
       }
-    })
+    }
+  },
+
+  updateHistory () {
+    const {objects} = content
+    const {historyTable} = this
+    let child = historyTable.firstChild.nextElementSibling.nextElementSibling
+
+    while (child) {
+      const prev = child
+      child = prev.nextSibling
+      historyTable.removeChild(prev)
+    }
+
+    let index = 0, tdIndex = 0
+    for (index in objects) {
+      const tr = document.createElement('tr')
+      const object = objects[index]
+
+      for (tdIndex = 0; tdIndex < 7; tdIndex += 1) {
+        const td = document.createElement('td')
+        tr.appendChild(td)
+      }
+
+      const selectButton = document.createElement('span')
+      selectButton.classList.add('details-list-item-before')
+      selectButton.style.backgroundColor = object.color.hexString()
+      selectButton.addEventListener('click', () => {
+        ui.historyObject = object
+        ui.updateHistoryValues()
+      })
+      const name = document.createElement('span')
+      name.textContent = object.name
+
+      tr.children[0].appendChild(selectButton)
+      tr.children[0].appendChild(name)
+
+      historyTable.appendChild(tr)
+    }
+
+    this.updateHistoryValues()
+  },
+
+  updateHistoryValues () {
+    const object = this.historyObject
+    const {objects} = content
+
+    if (!object) {
+      return
+    }
+
+
+    let index
+    const {length} = objects
+    for (index = 0; index < length; index += 1) {
+      const tr = this.historyTable.children[index + 1]
+      if (index === object.id) {
+        tr.children[1].textContent = '-'
+        tr.children[2].textContent = '-'
+        tr.children[3].textContent = '-'
+        tr.children[4].textContent = '-'
+        tr.children[5].textContent = '-'
+        tr.children[6].textContent = '-'
+      } else {
+        const history = content.histories[object.id][index]
+        tr.children[1].textContent = history.force.average.toExponential(3)
+        tr.children[2].textContent = history.force.min.toExponential(3)
+        tr.children[3].textContent = history.force.max.toExponential(3)
+        tr.children[4].textContent = history.distance.average.toExponential(3)
+        tr.children[5].textContent = history.distance.min.toExponential(3)
+        tr.children[6].textContent = history.distance.max.toExponential(3)
+      }
+    }
   },
 
   pause () {

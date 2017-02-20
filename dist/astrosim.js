@@ -3,6 +3,7 @@ const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
 const Vec2 = require('../content/vec2.js')
+let ui
 
 const animation = module.exports = ASTRO.animation = {
   MIN_SCALING: 2e-5,
@@ -27,6 +28,10 @@ const animation = module.exports = ASTRO.animation = {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
+
+      if (animation.frames % 50 === 0) {
+        ui.updateHistoryValues()
+      }
     }
     animation.frames += 1
   }),
@@ -43,6 +48,7 @@ const animation = module.exports = ASTRO.animation = {
     const canvas = this.canvas = document.getElementById('canvas')
     this.ctx = canvas.getContext('2d')
     this.adjust()
+    ui = require('../ui/ui.js')
 
     require('./transformation.js')
     require('./render.js')
@@ -58,7 +64,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":11,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec2.js":11,"../ui/ui.js":28,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -190,7 +196,7 @@ module.exports = function () {
   })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":20,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":21,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -354,7 +360,7 @@ animation.render = function () {
   this.drawControls()
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":27,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":28,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
 const Vec2 = require('../content/vec2.js')
 
@@ -421,11 +427,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":27}],8:[function(require,module,exports){
-const Vec2 = require('./vec2.js')
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":28}],8:[function(require,module,exports){
 const Color = require('../animation/color.js')
-const {content} = require('../astrosim.js')
-const ASTRO = require('../astrosim.js')
+const content = require('./content.js')
+const Vec2 = require('./vec2.js')
 
 module.exports = class Body {
   constructor (position, mass, radius, name) {
@@ -443,8 +448,6 @@ module.exports = class Body {
 
     this.history[0] = position[0]
     this.history[1] = position[1]
-
-    this.forces = []
   }
 
   applyForce (force) {
@@ -482,8 +485,6 @@ module.exports = class Body {
     }
   }
 
-  saveForce (body, force) {}
-
   clearHistory () {
     this.historyIndex = 0
     this.historyOverflow = false
@@ -491,7 +492,7 @@ module.exports = class Body {
 
   update (deltaTime) {
     // interact with all other objects
-    const {objects} = ASTRO.content
+    const {objects} = content
     let index
     for (index in objects) {
       const body = objects[index]
@@ -504,7 +505,7 @@ module.exports = class Body {
 
   interact (body, objects, bodyIndex, deltaTime) {
     // calculate the distance between the two objects
-    let distance = Vec2.subtract(this.position, body.position, ASTRO.content.temp1)
+    let distance = Vec2.subtract(this.position, body.position, content.temp1)
     const length = Vec2.getLength(distance) || 1e-10
     if (isNaN(distance[0]) || isNaN(distance[1])) {
       distance[0] = distance[1] = 0
@@ -521,28 +522,27 @@ module.exports = class Body {
       content.remove(this)
 
       // calculate the velocity and the color of the new object
-      const thisMomentum = Vec2.scale(this.velocity, this.mass, ASTRO.content.temp2)
-      const bodyMomentum = Vec2.scale(body.velocity, body.mass, ASTRO.content.temp3)
+      const thisMomentum = Vec2.scale(this.velocity, this.mass, content.temp2)
+      const bodyMomentum = Vec2.scale(body.velocity, body.mass, content.temp3)
       Vec2.add(thisMomentum, bodyMomentum, newBody.velocity)
       Vec2.scale(newBody.velocity, 1 / newBody.mass, newBody.velocity)
       newBody.color = this.color.interpolate(body.color)
 
       // finally add the new object and show it in the UI
-      ASTRO.content.add(newBody)
+      content.add(newBody)
     } else {
       // calculate the gravity
-      const force = ASTRO.content.temp2
+      const force = content.temp2
       Vec2.scale(
-        Vec2.normalize(distance, distance),
-        deltaTime * ASTRO.content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
+        Vec2.normalize(distance, content.temp3),
+        -deltaTime * content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
         force
       )
 
-      // move the bodies
-      Vec2.scale(force, -1, force)
+      // move the body
       this.applyForce(force)
 
-      this.saveForce(body, force)
+      content.save(this.id, body.id, Vec2.getLength(force), Vec2.getLength(distance))
     }
   }
 
@@ -566,7 +566,7 @@ module.exports = class Body {
   }
 }
 
-},{"../animation/color.js":2,"../astrosim.js":7,"./vec2.js":11}],9:[function(require,module,exports){
+},{"../animation/color.js":2,"./content.js":9,"./vec2.js":11}],9:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
 const History = require('./history.js')
@@ -592,8 +592,7 @@ const content = module.exports = ASTRO.content = {
   temp2: Vec2.create(),
   temp3: Vec2.create(),
 
-  forceHistories: {},
-  distanceHistories: {},
+  histories: [], // 2 dimensional array containing all histories between the planets
 
   initialize () {
     this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
@@ -605,30 +604,66 @@ const content = module.exports = ASTRO.content = {
     let index
     for (index in arguments) {
       const object = arguments[index]
-      objects.push(object)
-      object.id = this.currentId += 1
+      object.id = objects.push(object) - 1
 
-      this.forceHistories[object.id] = objects.map((item) => {
-        return new History()
-      })
-      this.distanceHistories[object.id] = new History()
+      this.addHistory(object.id)
     }
     ASTRO.ui.update()
   },
 
+  addHistory (id) {
+    const {histories} = this
+    const {length} = histories
+    histories[id] = []
+    let index
+    for (index = 0; index < length; index += 1) {
+      if (index !== id) {
+        const force = new History()
+        const distance = new History()
+        const history = {force, distance}
+        histories[index][id] = history
+        histories[id][index] = history
+      }
+    }
+
+    window.hist = histories
+  },
+
+  // save the data of two objects
+  save (idA, idB, force, distance) {
+    this.histories[idA][idB].force.add(force)
+    this.histories[idA][idB].distance.add(distance)
+  },
+
   // removes an object from the object list
   remove (item) {
-    const {objects} = this
-    objects.splice(objects.indexOf(item), 1)
+    const {objects, histories} = this
+    objects.splice(object.id, 1)
+
+    let index
+    for (index in histories) {
+      if (index !== object.id) {
+        histories[index].splice(object.id, 1)
+      }
+    }
+    histories.splice(object.id, 1)
   },
 
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    this.pendingTicks += this.TICKS_PER_FRAME
-    if (this.pendingTicks > 100) {
+    if (this.pendingTicks > this.TICKS_PER_FRAME) {
       this.TICKS_PER_FRAME -= 1
+      console.log(this.TICKS_PER_FRAME, 'descreasing')
     }
-    const {objects} = ASTRO.content
+    if (this.pendingTicks === 0 && this.TICKS_PER_FRAME < 100) {
+      this.TICKS_PER_FRAME += 1
+      console.log(this.TICKS_PER_FRAME, 'inscreasing')
+    }
+    if (this.ticks % 100 === 0) {
+      console.log(this.pendingTicks)
+    }
+    this.pendingTicks += this.TICKS_PER_FRAME
+    const {objects} = this
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaSecs
     let index
@@ -671,10 +706,10 @@ const History = module.exports = class {
   }
 
   add (value) {
-    if (value < this.min) {
+    if (value < this.min || this.count === 0) {
       this.min = value
     }
-    if (value > this.max) {
+    if (value > this.max || this.count === 0) {
       this.max = value
     }
     this.average = (this.average * this.count + value) / (this.count += 1)
@@ -1041,6 +1076,7 @@ module.exports = class Deserializer {
   static selectScene (data) {
     if (Deserializer.validateData(data)) {
       content.objects = []
+      content.histories = []
       content.currentId = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
@@ -1087,13 +1123,13 @@ module.exports = class Deserializer {
       (typeof data.content.timeFactor === 'number') &&
       (Array.isArray(data.content.objects)) &&
       (Array.isArray(data.content.selectedObjectIndices)) &&
-      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) && 
+      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) &&
       data.content.objects.filter((item) => typeof item === 'object')
   }
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":27}],18:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":28}],18:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1136,7 +1172,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":27}],19:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":28}],19:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
@@ -1145,10 +1181,20 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":21}],20:[function(require,module,exports){
+},{"./dialog.js":22}],20:[function(require,module,exports){
+const Dialog = require('./dialog.js')
+
+const detailsDialog = module.exports = new Dialog(document.getElementById('details-dialog'))
+
+document.getElementById('details-submit').addEventListener('click', () => {
+  detailsDialog.close()
+})
+
+},{"./dialog.js":22}],21:[function(require,module,exports){
 module.exports = {
 
   aboutDialog: null,
+  detailsDialog: null,
   settingsDialog: null,
   objectDialog: null,
   newObjectDialog: null,
@@ -1158,6 +1204,7 @@ module.exports = {
 
   initialize () {
     this.aboutDialog = require('./about-dialog.js')
+    this.detailsDialog = require('./details-dialog.js')
     this.settingsDialog = require('./settings-dialog.js')
     this.objectDialog = require('./object-dialog.js')
     this.newObjectDialog = require('./new-object-dialog.js')
@@ -1165,7 +1212,7 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":19,"./new-object-dialog.js":22,"./object-dialog.js":23,"./scene-dialog.js":24,"./settings-dialog.js":25}],21:[function(require,module,exports){
+},{"./about-dialog.js":19,"./details-dialog.js":20,"./new-object-dialog.js":23,"./object-dialog.js":24,"./scene-dialog.js":25,"./settings-dialog.js":26}],22:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 const dialogManager = require('./dialog-manager.js')
@@ -1266,7 +1313,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":27,"./dialog-manager.js":20}],22:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":28,"./dialog-manager.js":21}],23:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1305,7 +1352,7 @@ document.getElementById('new-object-submit').addEventListener('click', newObject
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":11,"./dialog.js":21}],23:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":11,"./dialog.js":22}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1364,7 +1411,7 @@ document.getElementById('object-submit').addEventListener('click', objectDialog.
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],24:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":28,"./dialog.js":22}],25:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1414,7 +1461,7 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
   }
 })
 
-},{"../../scenes/list.js":14,"../../serialization/deserializer.js":17,"./dialog.js":21}],25:[function(require,module,exports){
+},{"../../scenes/list.js":14,"../../serialization/deserializer.js":17,"./dialog.js":22}],26:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1460,7 +1507,7 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],26:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":28,"./dialog.js":22}],27:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1488,14 +1535,15 @@ module.exports = function () {
   document.getElementById('open-about').addEventListener('click', () => {
     this.dialogs.aboutDialog.open()
   })
+  document.getElementById('open-details').addEventListener('click', () => {
+    ui.updateHistory()
+    this.dialogs.detailsDialog.open()
+  })
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
-    const index = content.objects.indexOf(object)
-    if (index > -1) {
-      content.objects.splice(index, 1)
-      this.update()
-      animation.shouldRender = true
-    }
+    content.remove(object)
+    this.update()
+    animation.shouldRender = true
     this.dialogs.objectDialog.close()
   })
   document.getElementById('object-cancel').addEventListener('click', () => {
@@ -1541,23 +1589,27 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":18,"../ui/ui.js":27}],27:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":18,"../ui/ui.js":28}],28:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
-const content = require('../content/content.js')
+let content
 const Body = require('../content/body.js')
 const animation = require('../animation/animation.js')
 
 const ui = module.exports = ASTRO.ui = {
 
   selectedObjects: [],
+  historyObject: null,
   isPlaying: true,
 
   dialogs: require('./dialogs/dialog-manager.js'),
 
   initialize () {
     this.list = document.getElementById('object-list')
+    this.historyTable = document.getElementById('history')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
+
+    content = require('../content/content.js')
 
     require('./event-listeners.js').call(this)
     this.dialogs.initialize()
@@ -1595,9 +1647,9 @@ const ui = module.exports = ASTRO.ui = {
         objectDialog.open()
       })
 
-      const selectButton = document.createElement('button')
-      selectButton.classList.add('center-button')
-      selectButton.addEventListener('click', () => {
+      const centerButton = document.createElement('button')
+      centerButton.classList.add('center-button')
+      centerButton.addEventListener('click', () => {
         // add object to selection
         const {selectedObjects} = ui
         let selectionIndex
@@ -1614,7 +1666,7 @@ const ui = module.exports = ASTRO.ui = {
 
       const buttonWrapper = document.createElement('div')
       buttonWrapper.appendChild(optionsButton)
-      buttonWrapper.appendChild(selectButton)
+      buttonWrapper.appendChild(centerButton)
 
       item.appendChild(contentElt)
       item.appendChild(buttonWrapper)
@@ -1623,19 +1675,94 @@ const ui = module.exports = ASTRO.ui = {
 
     this.updateSelection()
   },
+
   updateSelection () {
     const selection = ui.selectedObjects
-    const selectionIndices = selection.map((object) => {
-      return content.objects.indexOf(object)
-    })
+    const selectionIndices = selection.map((object, index) => index)
     const {list} = this
-    Array.prototype.slice.call(list.children).forEach((item, itemIndex) => {
-      if (selectionIndices.indexOf(itemIndex) > -1) {
+    const children = Array.prototype.slice.call(list.children)
+    const {length} = children
+    let index
+    for (index = 0; index < length; index += 1) {
+      const item = children[index]
+      if (selectionIndices.indexOf(index) > -1) {
         item.classList.add('selected-object')
       } else {
         item.classList.remove('selected-object')
       }
-    })
+    }
+  },
+
+  updateHistory () {
+    const {objects} = content
+    const {historyTable} = this
+    let child = historyTable.firstChild.nextElementSibling.nextElementSibling
+
+    while (child) {
+      const prev = child
+      child = prev.nextSibling
+      historyTable.removeChild(prev)
+    }
+
+    let index = 0, tdIndex = 0
+    for (index in objects) {
+      const tr = document.createElement('tr')
+      const object = objects[index]
+
+      for (tdIndex = 0; tdIndex < 7; tdIndex += 1) {
+        const td = document.createElement('td')
+        tr.appendChild(td)
+      }
+
+      const selectButton = document.createElement('span')
+      selectButton.classList.add('details-list-item-before')
+      selectButton.style.backgroundColor = object.color.hexString()
+      selectButton.addEventListener('click', () => {
+        ui.historyObject = object
+        ui.updateHistoryValues()
+      })
+      const name = document.createElement('span')
+      name.textContent = object.name
+
+      tr.children[0].appendChild(selectButton)
+      tr.children[0].appendChild(name)
+
+      historyTable.appendChild(tr)
+    }
+
+    this.updateHistoryValues()
+  },
+
+  updateHistoryValues () {
+    const object = this.historyObject
+    const {objects} = content
+
+    if (!object) {
+      return
+    }
+
+
+    let index
+    const {length} = objects
+    for (index = 0; index < length; index += 1) {
+      const tr = this.historyTable.children[index + 1]
+      if (index === object.id) {
+        tr.children[1].textContent = '-'
+        tr.children[2].textContent = '-'
+        tr.children[3].textContent = '-'
+        tr.children[4].textContent = '-'
+        tr.children[5].textContent = '-'
+        tr.children[6].textContent = '-'
+      } else {
+        const history = content.histories[object.id][index]
+        tr.children[1].textContent = history.force.average.toExponential(3)
+        tr.children[2].textContent = history.force.min.toExponential(3)
+        tr.children[3].textContent = history.force.max.toExponential(3)
+        tr.children[4].textContent = history.distance.average.toExponential(3)
+        tr.children[5].textContent = history.distance.min.toExponential(3)
+        tr.children[6].textContent = history.distance.max.toExponential(3)
+      }
+    }
   },
 
   pause () {
@@ -1655,4 +1782,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":20,"./event-listeners.js":26}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":21,"./event-listeners.js":27}]},{},[7]);

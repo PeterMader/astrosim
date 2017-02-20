@@ -8,6 +8,7 @@ module.exports = class Deserializer {
   static selectScene (data) {
     if (Deserializer.validateData(data)) {
       content.objects = []
+      content.histories = []
       content.currentId = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
@@ -54,7 +55,7 @@ module.exports = class Deserializer {
       (typeof data.content.timeFactor === 'number') &&
       (Array.isArray(data.content.objects)) &&
       (Array.isArray(data.content.selectedObjectIndices)) &&
-      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) && 
+      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) &&
       data.content.objects.filter((item) => typeof item === 'object')
   }
 

@@ -23,8 +23,7 @@ const content = module.exports = ASTRO.content = {
   temp2: Vec2.create(),
   temp3: Vec2.create(),
 
-  forceHistories: {},
-  distanceHistories: {},
+  histories: [], // 2 dimensional array containing all histories between the planets
 
   initialize () {
     this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
@@ -36,30 +35,58 @@ const content = module.exports = ASTRO.content = {
     let index
     for (index in arguments) {
       const object = arguments[index]
-      objects.push(object)
-      object.id = this.currentId += 1
+      object.id = objects.push(object) - 1
 
-      this.forceHistories[object.id] = objects.map((item) => {
-        return new History()
-      })
-      this.distanceHistories[object.id] = new History()
+      this.addHistory(object.id)
     }
     ASTRO.ui.update()
   },
 
+  addHistory (id) {
+    const {histories} = this
+    const {length} = histories
+    histories[id] = []
+    let index
+    for (index = 0; index < length; index += 1) {
+      if (index !== id) {
+        const force = new History()
+        const distance = new History()
+        const history = {force, distance}
+        histories[index][id] = history
+        histories[id][index] = history
+      }
+    }
+
+    window.hist = histories
+  },
+
+  // save the data of two objects
+  save (idA, idB, force, distance) {
+    this.histories[idA][idB].force.add(force)
+    this.histories[idA][idB].distance.add(distance)
+  },
+
   // removes an object from the object list
   remove (item) {
-    const {objects} = this
-    objects.splice(objects.indexOf(item), 1)
+    const {objects, histories} = this
+    objects.splice(object.id, 1)
+
+    let index
+    for (index in histories) {
+      if (index !== object.id) {
+        histories[index].splice(object.id, 1)
+      }
+    }
+    histories.splice(object.id, 1)
   },
 
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    this.pendingTicks += this.TICKS_PER_FRAME
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
     }
-    const {objects} = ASTRO.content
+    this.pendingTicks += this.TICKS_PER_FRAME
+    const {objects} = this
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaSecs
     let index

@@ -8,10 +8,10 @@ const History = module.exports = class {
   }
 
   add (value) {
-    if (value < this.min) {
+    if (value < this.min || this.count === 0) {
       this.min = value
     }
-    if (value > this.max) {
+    if (value > this.max || this.count === 0) {
       this.max = value
     }
     this.average = (this.average * this.count + value) / (this.count += 1)
