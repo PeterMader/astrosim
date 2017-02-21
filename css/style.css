@@ -76,7 +76,7 @@ div.icon-before {
   padding: 0;
   border-radius: 4px;
   background-repeat: no-repeat;
-  background-image: url('../res/icon_options.png');
+  background-image: url('../res/icon_properties.png');
 }
 
 .selected-object .center-button {
@@ -109,6 +109,10 @@ div.icon-before {
 
 #open-about {
   background-image: url('../res/icon_about.png');
+}
+
+#open-details {
+  background-image: url('../res/icon_details.png');
 }
 
 #open-side-bar {
