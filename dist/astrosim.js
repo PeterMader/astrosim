@@ -651,16 +651,8 @@ const content = module.exports = ASTRO.content = {
 
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    if (this.pendingTicks > this.TICKS_PER_FRAME) {
+    if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
-      console.log(this.TICKS_PER_FRAME, 'descreasing')
-    }
-    if (this.pendingTicks === 0 && this.TICKS_PER_FRAME < 100) {
-      this.TICKS_PER_FRAME += 1
-      console.log(this.TICKS_PER_FRAME, 'inscreasing')
-    }
-    if (this.ticks % 100 === 0) {
-      console.log(this.pendingTicks)
     }
     this.pendingTicks += this.TICKS_PER_FRAME
     const {objects} = this
