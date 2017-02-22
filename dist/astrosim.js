@@ -123,6 +123,8 @@ module.exports = class Color {
 
 },{}],3:[function(require,module,exports){
 const animation = require('./animation.js')
+const {mainLoop} = require('../astrosim.js')
+const dialogManager = require('../ui/dialogs/dialog-manager.js')
 
 module.exports = function () {
   const {canvas} = this
@@ -167,9 +169,28 @@ module.exports = function () {
   document.body.addEventListener('mouseup', () => {
     mouseHeld = false
   })
+  document.addEventListener('keyup', (e) => {
+    if (!dialogManager.openDialog) {
+      // canvas is visible
+      const translation = e.shiftKey ? 10 : 100
+      if (e.key === 'ArrowUp') {
+        animation.translate(0, -translation)
+      } else if (e.key === 'ArrowDown') {
+        animation.translate(0, translation)
+      } else if (e.key === 'ArrowLeft') {
+        animation.translate(-translation, 0)
+      } else if (e.key === 'ArrowRight') {
+        animation.translate(translation, 0)
+      } else if (e.key === '+' || e.key === '*') {
+        animation.scale(e.shiftKey ? 1.05 : 2, 0, 0)
+      } else if (e.key === '-' || e.key === '_') {
+        animation.scale(e.shiftKey ? .95 : .5, 0, 0)
+      }
+    }
+  })
 }
 
-},{"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":19,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -357,7 +378,6 @@ animation.scale = function (factor, centerX, centerY) {
   if (newRatio > animation.MAX_SCALING) {
     return
   }
-
   animation.ratio = newRatio
 
   // zoom center point
@@ -1037,9 +1057,30 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":19}],19:[function(require,module,exports){
+},{"./dialog.js":20}],19:[function(require,module,exports){
+module.exports = {
+
+  aboutDialog: null,
+  settingsDialog: null,
+  objectDialog: null,
+  newObjectDialog: null,
+  sceneDialog: null,
+
+  openDialog: null,
+
+  initialize () {
+    this.aboutDialog = require('./about-dialog.js')
+    this.settingsDialog = require('./settings-dialog.js')
+    this.objectDialog = require('./object-dialog.js')
+    this.newObjectDialog = require('./new-object-dialog.js')
+    this.sceneDialog = require('./scene-dialog.js')
+  }
+}
+
+},{"./about-dialog.js":18,"./new-object-dialog.js":21,"./object-dialog.js":22,"./scene-dialog.js":23,"./settings-dialog.js":24}],20:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
+const dialogManager = require('./dialog-manager.js')
 
 module.exports = class Dialog {
   constructor (element) {
@@ -1111,6 +1152,7 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-open')
     this.element.classList.remove('dialog-closed')
     this.opened = true
+    dialogManager.openDialog = this
 
     animation.pause()
   }
@@ -1119,8 +1161,15 @@ module.exports = class Dialog {
     this.element.classList.add('dialog-closed')
     this.opened = false
 
+    dialogManager.openDialog = null
+
     if (ui.isPlaying) {
       animation.unpause()
+    }
+  }
+  submit () {
+    if (this.validate()) {
+      this.close()
     }
   }
   static greaterThanZero (input, value) {
@@ -1129,25 +1178,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":26}],20:[function(require,module,exports){
-module.exports = {
-
-  aboutDialog: null,
-  settingsDialog: null,
-  objectDialog: null,
-  newObjectDialog: null,
-  sceneDialog: null,
-
-  initialize () {
-    this.aboutDialog = require('./about-dialog.js')
-    this.settingsDialog = require('./settings-dialog.js')
-    this.objectDialog = require('./object-dialog.js')
-    this.newObjectDialog = require('./new-object-dialog.js')
-    this.sceneDialog = require('./scene-dialog.js')
-  }
-}
-
-},{"./about-dialog.js":18,"./new-object-dialog.js":21,"./object-dialog.js":22,"./scene-dialog.js":23,"./settings-dialog.js":24}],21:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":26,"./dialog-manager.js":19}],21:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1172,7 +1203,7 @@ newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, 
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
-document.getElementById('new-object-submit').addEventListener('click', () => {
+document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))
     const velocity = Vec2.create(Number(velocityX.value), Number(velocityY.value))
@@ -1186,7 +1217,7 @@ document.getElementById('new-object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":19}],22:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":20}],22:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1224,7 +1255,7 @@ objectDialog.setValues = () => {
   })
 }
 
-document.getElementById('object-submit').addEventListener('click', () => {
+document.getElementById('object-submit').addEventListener('click', objectDialog.submit = () => {
   if (objectDialog.validate()) {
     const object = content.editedObject
     object.name = name.value
@@ -1245,7 +1276,7 @@ document.getElementById('object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":19}],23:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":20}],23:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1282,7 +1313,7 @@ select.addEventListener('change', () => {
   }
 })
 
-document.getElementById('load-scene').addEventListener('click', () => {
+document.getElementById('load-scene').addEventListener('click', sceneDialog.submit = () => {
   if (select.selectedIndex === 0) {
     reader.onload = function () {
       Deserializer.deserialize(reader.result)
@@ -1295,7 +1326,7 @@ document.getElementById('load-scene').addEventListener('click', () => {
   }
 })
 
-},{"../../scenes/list.js":13,"../../serialization/deserializer.js":16,"./dialog.js":19}],24:[function(require,module,exports){
+},{"../../scenes/list.js":13,"../../serialization/deserializer.js":16,"./dialog.js":20}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1330,7 +1361,7 @@ document.getElementById('center-viewport').addEventListener('click', () => {
   ui.selectedObject = null
 })
 
-document.getElementById('settings-submit').addEventListener('click', () => {
+document.getElementById('settings-submit').addEventListener('click', settingsDialog.submit = () => {
   if (settingsDialog.validate()) {
     animation.translation[0] = Number(translationX.value)
     animation.translation[1] = Number(translationY.value)
@@ -1341,7 +1372,7 @@ document.getElementById('settings-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":19}],25:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":20}],25:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1406,6 +1437,20 @@ module.exports = function () {
   document.getElementById('close-side-bar').addEventListener('click', () => {
     sideBar.classList.add('side-bar-closed')
   })
+
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      if (ui.dialogs.openDialog) {
+        ui.dialogs.openDialog.submit()
+      } else {
+        if (mainLoop.running) {
+          ui.pause()
+        } else {
+          ui.unpause()
+        }
+      }
+    }
+  })
 }
 
 },{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":17,"../ui/ui.js":26}],26:[function(require,module,exports){
@@ -1420,7 +1465,7 @@ const ui = module.exports = ASTRO.ui = {
   selectedObject: null,
   isPlaying: true,
 
-  dialogs: require('./dialogs/init-dialogs.js'),
+  dialogs: require('./dialogs/dialog-manager.js'),
 
   initialize () {
     this.list = document.getElementById('object-list')
@@ -1462,7 +1507,7 @@ const ui = module.exports = ASTRO.ui = {
       contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
       const selectButton = document.createElement('button')
-      selectButton.textContent = 'Center'
+      selectButton.classList.add('center-button')
       selectButton.addEventListener('click', () => {
         if (animation.selectedObject === object) {
           animation.selectedObject = null
@@ -1517,4 +1562,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":20,"./event-listeners.js":25}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":19,"./event-listeners.js":25}]},{},[7]);

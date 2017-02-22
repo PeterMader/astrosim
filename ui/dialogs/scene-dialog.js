@@ -34,7 +34,7 @@ select.addEventListener('change', () => {
   }
 })
 
-document.getElementById('load-scene').addEventListener('click', () => {
+document.getElementById('load-scene').addEventListener('click', sceneDialog.submit = () => {
   if (select.selectedIndex === 0) {
     reader.onload = function () {
       Deserializer.deserialize(reader.result)

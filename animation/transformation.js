@@ -22,7 +22,6 @@ animation.scale = function (factor, centerX, centerY) {
   if (newRatio > animation.MAX_SCALING) {
     return
   }
-
   animation.ratio = newRatio
 
   // zoom center point

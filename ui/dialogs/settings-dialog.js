@@ -32,7 +32,7 @@ document.getElementById('center-viewport').addEventListener('click', () => {
   ui.selectedObject = null
 })
 
-document.getElementById('settings-submit').addEventListener('click', () => {
+document.getElementById('settings-submit').addEventListener('click', settingsDialog.submit = () => {
   if (settingsDialog.validate()) {
     animation.translation[0] = Number(translationX.value)
     animation.translation[1] = Number(translationY.value)

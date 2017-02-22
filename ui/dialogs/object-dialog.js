@@ -35,7 +35,7 @@ objectDialog.setValues = () => {
   })
 }
 
-document.getElementById('object-submit').addEventListener('click', () => {
+document.getElementById('object-submit').addEventListener('click', objectDialog.submit = () => {
   if (objectDialog.validate()) {
     const object = content.editedObject
     object.name = name.value

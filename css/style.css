@@ -10,6 +10,14 @@ body {
   background-image: url('../res/icon_play.png');
   background-repeat: no-repeat;
   background-position: -9999px -9999px;
+
+  /* Avoid text selection */
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 #side-bar {
@@ -30,7 +38,7 @@ a {
 }
 
 a:hover {
-  color: #1255AA;
+  color: #132C75;
 }
 
 .icon {
@@ -44,6 +52,20 @@ div.icon-before {
   background-position: 3px center;
   padding-left: 30px;
   background-repeat: no-repeat;
+}
+
+.center-button {
+  background-position: center;
+  height: 30px;
+  width: 30px;
+  padding: 0;
+  border-radius: 4px;
+  background-repeat: no-repeat;
+  background-image: url('../res/icon_center.png');
+}
+
+.selected-object .center-button {
+  background-color: #132C75;
 }
 
 .pause-button {
@@ -105,11 +127,6 @@ div.icon-before {
 
 .selected-object {
   background: #EEEEEE;
-}
-
-.selected-object button {
-  padding: 5px 9px 3px 11px;
-  background: #1255AA;
 }
 
 .dialog {
