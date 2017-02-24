@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "name": "TRAPPIST-1",
+    "description": "The 2MASS J23062928-0502285 system (also known as TRAPPIST-1A)."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e4,
+    "objects": [
+      {
+        "name": "Trappist-1",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 0,
+        "mass": 1.6309144e+29,
+        "radius": 81472014,
+        "color": "#f06d63"
+      },
+      {
+        "name": "Trappist-1b",
+        "positionX": 1.65539e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 7.999897961860064e4,
+        "mass": 5.07637e+24,
+        "radius": 6.918906e6,
+        "color": "#3366ff"
+      },
+      {
+        "name": "Trappist-1c",
+        "positionX": 2.26778e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 6.837068304792153e4,
+        "mass": 8.241636e+24,
+        "radius": 6.727776e6,
+        "color": "#55AAff"
+      },
+    ]
+  }
+}

@@ -190,7 +190,7 @@ module.exports = function () {
   })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":19,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":20,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":26}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":27}],8:[function(require,module,exports){
 const Vec2 = require('./vec2.js')
 const Color = require('../animation/color.js')
 const {content} = require('../astrosim.js')
@@ -777,9 +777,10 @@ require('./earth-moon.json'),
 require('./empty.json'), 
 require('./solar-system.json'), 
 require('./sun-earth.json'), 
+require('./trappist-1.json'), 
 ] 
 
-},{"./earth-moon.json":11,"./empty.json":12,"./solar-system.json":14,"./sun-earth.json":15}],14:[function(require,module,exports){
+},{"./earth-moon.json":11,"./empty.json":12,"./solar-system.json":14,"./sun-earth.json":15,"./trappist-1.json":16}],14:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Solar System",
@@ -948,6 +949,55 @@ module.exports={
 }
 
 },{}],16:[function(require,module,exports){
+module.exports={
+  "meta": {
+    "name": "TRAPPIST-1",
+    "description": "The 2MASS J23062928-0502285 system (also known as TRAPPIST-1A)."
+  },
+  "viewport": {
+    "translationX": 0,
+    "translationY": 0,
+    "ratio": 1
+  },
+  "content": {
+    "selectedObject": null,
+    "timeFactor": 1e4,
+    "objects": [
+      {
+        "name": "Trappist-1",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 0,
+        "mass": 1.6309144e+29,
+        "radius": 81472014,
+        "color": "#f06d63"
+      },
+      {
+        "name": "Trappist-1b",
+        "positionX": 1.65539e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 7.999897961860064e4,
+        "mass": 5.07637e+24,
+        "radius": 6.918906e6,
+        "color": "#3366ff"
+      },
+      {
+        "name": "Trappist-1c",
+        "positionX": 2.26778e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 6.837068304792153e4,
+        "mass": 8.241636e+24,
+        "radius": 6.727776e6,
+        "color": "#55AAff"
+      },
+    ]
+  }
+}
+
+},{}],17:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -1005,7 +1055,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":26}],17:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":27}],18:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1048,7 +1098,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":26}],18:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":27}],19:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
@@ -1057,7 +1107,7 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":20}],19:[function(require,module,exports){
+},{"./dialog.js":21}],20:[function(require,module,exports){
 module.exports = {
 
   aboutDialog: null,
@@ -1077,7 +1127,7 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":18,"./new-object-dialog.js":21,"./object-dialog.js":22,"./scene-dialog.js":23,"./settings-dialog.js":24}],20:[function(require,module,exports){
+},{"./about-dialog.js":19,"./new-object-dialog.js":22,"./object-dialog.js":23,"./scene-dialog.js":24,"./settings-dialog.js":25}],21:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 const dialogManager = require('./dialog-manager.js')
@@ -1178,7 +1228,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":26,"./dialog-manager.js":19}],21:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":27,"./dialog-manager.js":20}],22:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1217,7 +1267,7 @@ document.getElementById('new-object-submit').addEventListener('click', newObject
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":20}],22:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":21}],23:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1276,7 +1326,7 @@ document.getElementById('object-submit').addEventListener('click', objectDialog.
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":20}],23:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],24:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1326,7 +1376,7 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
   }
 })
 
-},{"../../scenes/list.js":13,"../../serialization/deserializer.js":16,"./dialog.js":20}],24:[function(require,module,exports){
+},{"../../scenes/list.js":13,"../../serialization/deserializer.js":17,"./dialog.js":21}],25:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1372,7 +1422,7 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":26,"./dialog.js":20}],25:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],26:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1453,7 +1503,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":17,"../ui/ui.js":26}],26:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":18,"../ui/ui.js":27}],27:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
@@ -1562,4 +1612,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":19,"./event-listeners.js":25}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":20,"./event-listeners.js":26}]},{},[7]);
