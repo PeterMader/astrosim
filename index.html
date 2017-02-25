@@ -57,6 +57,9 @@
           <h5 id="scene-name"></h5>
           <div class="description" id="scene-description"></div>
         </div>
+        <div class="item hidden" id="invalid-scene">
+          <span class="alert" id="invalid-scene-message"></span>
+        </div>
         <div class="item">
           <button type="button" id="load-scene">Load scene</button>
           <button type="button" id="cancel-scene">Cancel</button>
@@ -65,20 +68,22 @@
 
       <div id="details-dialog">
         <h3>Details</h3>
-        Click one of the colored spots to select an object.
-        <table>
-          <tbody id="history">
-            <tr>
-              <td></td>
-              <td>Average force</td>
-              <td>Minimum force</td>
-              <td>Maximum force</td>
-              <td>Average distance</td>
-              <td>Minimum distance</td>
-              <td>Maximum distance</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="item">
+          Click one of the colored spots to select an object.
+          <table>
+            <tbody id="history">
+              <tr>
+                <td></td>
+                <td>Average force</td>
+                <td>Minimum force</td>
+                <td>Maximum force</td>
+                <td>Average distance</td>
+                <td>Minimum distance</td>
+                <td>Maximum distance</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div class="item">
           <button type="button" id="details-submit">Done</button>
         </div>
@@ -90,12 +95,12 @@
         <button type="button" id="center-viewport">Center viewport</button>
         <div class="item">
           Translation in x direction:
-          <input name="translation-x" value="0" id="settings-translation-x">
+          <input name="translation-x" value="0" id="settings-translation-x">m
           <div class="description">The translation of the viewport in x direction in pixels. The value 0 means no translation, a positive value means translation to the right, a negative value means translation to the left.</div>
         </div>
         <div class="item">
           Translation in y direction:
-          <input name="translation-y" value="0" id="settings-translation-y">
+          <input name="translation-y" value="0" id="settings-translation-y">m
           <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
         </div>
         <div class="item">
@@ -103,11 +108,23 @@
           <input name="scaling-factor" value="0" id="settings-scaling-factor">
           <div class="description">The scaling factor of the viewport.</div>
         </div>
+        <div class="item">
+          <label><input name="draw-history" type="checkbox" checked="checked" id="settings-draw-history">Draw object trail</label>
+          <div class="description">Check this if you want the object trails to be rendered.</div>
+        </div>
+        <div class="item">
+          <label><input name="draw-controls" type="checkbox" checked="checked" id="settings-draw-controls">Draw controls</label>
+          <div class="description">Check this if you want the global details and controls to be rendered.</div>
+        </div>
+        <div class="item">
+          <label><input name="draw-labels" type="checkbox" id="settings-draw-labels">Draw labels</label>
+          <div class="description">Check this if an object's name should be visible beneath it.</div>
+        </div>
         <h5>Content settings</h5>
         <div class="item">
           Time factor:
           <input name="time-factor" value="2.62974391e+6" placeholder="Default: 2.63e+6" id="settings-time-factor">
-          <div class="description">The factor of the time is accelerated. One year has 31556927 seconds; the default value means one simulated month per real second.</div>
+          <div class="description">The factor by which the time is accelerated. One year has 31556927 seconds; the default value means one simulated month per real second.</div>
         </div>
         <div class="item">
           <button type="button" id="settings-submit">Done</button>
@@ -124,32 +141,32 @@
         </div>
         <div class="item">
           Position in x direction:
-          <input name="position-x" value="0" id="object-position-x">
+          <input name="position-x" value="0" id="object-position-x">m
           <div class="description">The position of the object in x direction.</div>
         </div>
         <div class="item">
           Position in y direction:
-          <input name="position-y" value="0" id="object-position-y">
+          <input name="position-y" value="0" id="object-position-y">m
           <div class="description">The position of the object in y direction.</div>
         </div>
         <div class="item">
           Velocity in x direction:
-          <input name="velocity-x" value="0" id="object-velocity-x">
+          <input name="velocity-x" value="0" id="object-velocity-x">m/s
           <div class="description">The velocity of the object in x direction.</div>
         </div>
         <div class="item">
           Velocity in y direction:
-          <input name="velocity-y" value="0" id="object-velocity-y">
+          <input name="velocity-y" value="0" id="object-velocity-y">m/s
           <div class="description">The velocity of the object in y direction. </div>
         </div>
         <div class="item">
           Mass:
-          <input name="mass" value="0" id="object-mass">
+          <input name="mass" value="0" id="object-mass">kg
           <div class="description">The object's mass.</div>
         </div>
         <div class="item">
           Radius:
-          <input name="radius" value="0" id="object-radius">
+          <input name="radius" value="0" id="object-radius">m
           <div class="description">The object's radius.</div>
         </div>
         <div class="item">
@@ -173,32 +190,32 @@
         </div>
         <div class="item">
           Position in x direction:
-          <input name="position-x" value="0" id="new-object-position-x">
+          <input name="position-x" value="0" id="new-object-position-x">m
           <div class="description">The position of the object in x direction.</div>
         </div>
         <div class="item">
           Position in y direction:
-          <input name="position-y" value="0" id="new-object-position-y">
+          <input name="position-y" value="0" id="new-object-position-y">m
           <div class="description">The position of the object in y direction.</div>
         </div>
         <div class="item">
           Velocity in x direction:
-          <input name="velocity-x" value="0" id="new-object-velocity-x">
+          <input name="velocity-x" value="0" id="new-object-velocity-x">m/s
           <div class="description">The velocity of the object in x direction.</div>
         </div>
         <div class="item">
           Velocity in y direction:
-          <input name="velocity-y" value="0" id="new-object-velocity-y">
+          <input name="velocity-y" value="0" id="new-object-velocity-y">m/s
           <div class="description">The velocity of the object in y direction. </div>
         </div>
         <div class="item">
           Mass:
-          <input name="mass" value="0" id="new-object-mass">
+          <input name="mass" value="0" id="new-object-mass">kg
           <div class="description">The object's mass.</div>
         </div>
         <div class="item">
           Radius:
-          <input name="radius" value="0" id="new-object-radius">
+          <input name="radius" value="0" id="new-object-radius">m
           <div class="description">The object's radius.</div>
         </div>
         <div class="item">

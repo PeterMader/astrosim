@@ -51,6 +51,7 @@ module.exports = function () {
     this.dialogs.sceneDialog.open()
   })
   document.getElementById('cancel-scene').addEventListener('click', () => {
+    this.dialogs.sceneDialog.hideError()
     this.dialogs.sceneDialog.close()
   })
   document.getElementById('settings-cancel').addEventListener('click', () => {

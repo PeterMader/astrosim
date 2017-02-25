@@ -21,16 +21,14 @@ const animation = module.exports = ASTRO.animation = {
 
   shouldRender: true,
   drawHistory: true,
+  drawControls: true,
+  drawLabels: false,
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
-
-      if (animation.frames % 50 === 0) {
-        ui.updateHistoryValues()
-      }
     }
     animation.frames += 1
   }),

@@ -58,6 +58,14 @@ div.icon-before {
   background-repeat: no-repeat;
 }
 
+#center-viewport {
+  background-position: 3px center;
+  padding-left: 30px;
+  border-radius: 4px;
+  background-repeat: no-repeat;
+  background-image: url('../res/icon_center.png');
+}
+
 .center-button {
   background-position: center;
   height: 30px;
@@ -175,6 +183,10 @@ div.icon-before {
 .description {
   color: #555555;
   font-size: 90%;
+}
+
+.alert {
+  color: #FF3311;
 }
 
 .dialog-container {

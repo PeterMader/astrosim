@@ -16,7 +16,7 @@ animation.drawCircle = function (x, y, radius, color) {
   ctx.fill()
 }
 
-animation.drawControls = function () {
+animation.renderControls = function () {
   const {translation, ratio, canvas, ctx} = this
 
   // draw the center point
@@ -35,8 +35,13 @@ animation.drawControls = function () {
   const unit = 200
   const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
-  const metrics = ctx.measureText(width)
-  ctx.fillText(width, canvas.width - unit / 2 - metrics.width / 2 - 20, canvas.height - 40)
+  ctx.textAlign = 'center'
+  ctx.fillText(width, canvas.width - unit / 2 - 20, canvas.height - 40)
+
+  // draw the time stats
+  ctx.textAlign = 'right'
+  ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
+  ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
 }
 
 animation.render = function () {
@@ -69,9 +74,14 @@ animation.render = function () {
       pos[1] += offsetY
 
       // calculate the circle's radius
-      const radius = object.radius * this.ratio
+      const radius = object.radius * this.ratio / content.METERS_PER_PIXEL
       const color = object.color.hexString()
-      this.drawCircle(pos[0], pos[1], Math.max(radius / content.METERS_PER_PIXEL, 3), color)
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+
+      if (animation.drawLabels) {
+        ctx.textAlign = 'left'
+        ctx.fillText(object.name, pos[0] + radius + 3, pos[1])
+      }
 
       if (animation.drawHistory) {
         // draw the object's trace
@@ -101,6 +111,7 @@ animation.render = function () {
     }
   }
 
-  // finally, draw the center cross and the measure unit
-  this.drawControls()
+  if (animation.drawControls) {
+    this.renderControls()
+  }
 }

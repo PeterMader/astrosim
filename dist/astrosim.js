@@ -22,16 +22,14 @@ const animation = module.exports = ASTRO.animation = {
 
   shouldRender: true,
   drawHistory: true,
+  drawControls: true,
+  drawLabels: false,
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
-
-      if (animation.frames % 50 === 0) {
-        ui.updateHistoryValues()
-      }
     }
     animation.frames += 1
   }),
@@ -271,7 +269,7 @@ animation.drawCircle = function (x, y, radius, color) {
   ctx.fill()
 }
 
-animation.drawControls = function () {
+animation.renderControls = function () {
   const {translation, ratio, canvas, ctx} = this
 
   // draw the center point
@@ -290,8 +288,13 @@ animation.drawControls = function () {
   const unit = 200
   const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
-  const metrics = ctx.measureText(width)
-  ctx.fillText(width, canvas.width - unit / 2 - metrics.width / 2 - 20, canvas.height - 40)
+  ctx.textAlign = 'center'
+  ctx.fillText(width, canvas.width - unit / 2 - 20, canvas.height - 40)
+
+  // draw the time stats
+  ctx.textAlign = 'right'
+  ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
+  ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
 }
 
 animation.render = function () {
@@ -324,9 +327,14 @@ animation.render = function () {
       pos[1] += offsetY
 
       // calculate the circle's radius
-      const radius = object.radius * this.ratio
+      const radius = object.radius * this.ratio / content.METERS_PER_PIXEL
       const color = object.color.hexString()
-      this.drawCircle(pos[0], pos[1], Math.max(radius / content.METERS_PER_PIXEL, 3), color)
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+
+      if (animation.drawLabels) {
+        ctx.textAlign = 'left'
+        ctx.fillText(object.name, pos[0] + radius + 3, pos[1])
+      }
 
       if (animation.drawHistory) {
         // draw the object's trace
@@ -356,8 +364,9 @@ animation.render = function () {
     }
   }
 
-  // finally, draw the center cross and the measure unit
-  this.drawControls()
+  if (animation.drawControls) {
+    this.renderControls()
+  }
 }
 
 },{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":29,"./animation.js":1}],6:[function(require,module,exports){
@@ -496,7 +505,7 @@ module.exports = class Body {
     let index
     for (index in objects) {
       const body = objects[index]
-      if (body === this) {
+      if (body === this || body.id === this.id) {
         continue
       }
       this.interact(body, objects, index, deltaTime)
@@ -580,8 +589,12 @@ const content = module.exports = ASTRO.content = {
   METERS_PER_PIXEL: 3e8,
   GRAVITY_CONSTANT: 6.67408e-11,
 
+  toBeDeleted: [], // holds indices of all the objects that will be deleted after the current tick
+  toBeAdded: [], // holds the objects that will be added after the current tick
+
   ticks: 0,
   realTime: 0,
+  simulatedTime: 0,
   pendingTicks: 0,
   TICKS_PER_FRAME: 10,
 
@@ -625,28 +638,37 @@ const content = module.exports = ASTRO.content = {
         histories[id][index] = history
       }
     }
-
-    window.hist = histories
   },
 
   // save the data of two objects
   save (idA, idB, force, distance) {
-    this.histories[idA][idB].force.add(force)
-    this.histories[idA][idB].distance.add(distance)
+    if (this.histories[idA] && this.histories[idA][idB]) {
+      this.histories[idA][idB].force.add(force)
+      this.histories[idA][idB].distance.add(distance)
+    }
   },
 
   // removes an object from the object list
-  remove (item) {
-    const {objects, histories} = this
-    objects.splice(object.id, 1)
+  remove (object) {
+    this.objects.splice(object.id, 1)
+    this.toBeDeleted.push(object.id)
+  },
 
-    let index
-    for (index in histories) {
-      if (index !== object.id) {
-        histories[index].splice(object.id, 1)
+  commitRemove () {
+    const {histories, toBeDeleted} = this
+    let deletionIndex
+    for (deletionIndex in toBeDeleted) {
+      const objectIndex = toBeDeleted[deletionIndex]
+
+      let index
+      for (index in histories) {
+        if (index !== objectIndex) {
+          histories[index].splice(objectIndex, 1)
+        }
       }
+      histories.splice(objectIndex, 1)
     }
-    histories.splice(object.id, 1)
+    this.toBeDeleted = []
   },
 
   // calls the 'update' method of all the objects
@@ -657,7 +679,8 @@ const content = module.exports = ASTRO.content = {
     this.pendingTicks += this.TICKS_PER_FRAME
     const {objects} = this
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
-    this.realTime += deltaSecs
+    this.realTime += deltaTime / 1000
+    this.simulatedTime += deltaSecs
     let index
     while (this.pendingTicks > 0) {
       this.ticks += 1
@@ -669,6 +692,12 @@ const content = module.exports = ASTRO.content = {
         if (this.ticks % animation.traceFrequency === 0) {
           objects[index].savePosition()
         }
+      }
+      if (this.toBeDeleted.length > 0) {
+        this.commitRemove()
+      }
+      if (this.toBeAdded.length > 0) {
+        this.commitAdd()
       }
       this.pendingTicks -= 1
     }
@@ -927,40 +956,40 @@ module.exports={
       },
       {
         "name": "Venus",
-        "positionX": -1.0816e11,
-        "positionY": 0,
-        "velocityX": 0,
-        "velocityY": -3.502e4,
+        "positionX": 0,
+        "positionY": 1.0816e11,
+        "velocityX": -3.502e4,
+        "velocityY": 0,
         "mass": 4.869e24,
         "radius": 6.0518e6,
         "color": "#dddd44"
       },
       {
         "name": "Earth",
-        "positionX": 1.496e11,
+        "positionX": -1.496e11,
         "positionY": 0,
         "velocityX": 0,
-        "velocityY": 2.978e4,
+        "velocityY": -2.978e4,
         "mass": 5.974e24,
         "radius": 6.3674675e6,
         "color": "#0000ff"
       },
       {
         "name": "Moon",
-        "positionX": 1.492156e11,
+        "positionX": -1.492156e11,
         "positionY": 0,
         "velocityX": 0,
-        "velocityY": 3.0803e4,
+        "velocityY": -3.0803e4,
         "mass": 7.349e22,
         "radius": 1.738e6,
         "color": "#888888"
       },
       {
         "name": "Mars",
-        "positionX": -2.2799e11,
-        "positionY": 0,
-        "velocityX": 0,
-        "velocityY": -2.413e4,
+        "positionX": 0,
+        "positionY": -2.2799e11,
+        "velocityX": 2.413e4,
+        "velocityY": 0,
         "mass": 6.419e23,
         "radius": 3.3862e6,
         "color": "#ff0000"
@@ -977,30 +1006,30 @@ module.exports={
       },
       {
         "name": "Saturn",
-        "positionX": -1.4335e12,
-        "positionY": 0,
-        "velocityX": 0,
-        "velocityY": -9.69e3,
+        "positionX": 0,
+        "positionY": 1.4335e12,
+        "velocityX": -9.69e3,
+        "velocityY": 0,
         "mass": 5.685e26,
         "radius": 5.7316e7,
         "color": "#ffaa00"
       },
       {
         "name": "Uranus",
-        "positionX": 2.8724e12,
+        "positionX": -2.8724e12,
         "positionY": 0,
         "velocityX": 0,
-        "velocityY": 6.81e3,
+        "velocityY": -6.81e3,
         "mass": 8.683e25,
         "radius": 2.5266e7,
         "color": "#dddfff"
       },
       {
         "name": "Neptune",
-        "positionX": -4.4984e12,
-        "positionY": 0,
-        "velocityX": 0,
-        "velocityY": -5.43e3,
+        "positionX": 0,
+        "positionY": -4.4984e12,
+        "velocityX": 5.43e3,
+        "velocityY": 0,
         "mass": 1.0243e26,
         "radius": 2.45525e7,
         "color": "#00045b"
@@ -1165,11 +1194,11 @@ const ui = require('../ui/ui.js')
 
 module.exports = class Deserializer {
 
-  static selectScene (data) {
+  static selectScene (data, cb) {
     if (Deserializer.validateData(data)) {
       content.objects = []
       content.histories = []
-      content.currentId = 0
+      content.currentId = content.realTime = content.simulatedTime = content.ticks = content.pendingTicks = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
 
@@ -1183,23 +1212,27 @@ module.exports = class Deserializer {
       })
 
       animation.shouldRender = true
-      ui.update()
       ui.pause()
+      if (typeof cb === 'function') {
+        cb()
+      }
     } else {
-      console.log('Error: Invalid scene.')
+      if (typeof cb === 'function') {
+        cb('Error: Invalid scene.')
+      }
     }
   }
 
-  static deserialize (string) {
+  static deserialize (string, cb) {
     let data
     try {
       data = JSON.parse(string)
     } catch (e) {
-      console.log('Error parsing the selected file: ', e)
+      cb(`Error parsing the selected file: ${e.getMessage()}`)
       return
     }
 
-    Deserializer.selectScene(data)
+    Deserializer.selectScene(data, cb)
   }
 
   static validateData (data) {
@@ -1519,6 +1552,17 @@ const reader = new FileReader()
 const select = document.getElementById('deserialize-select')
 const list = document.getElementById('deserialize-default')
 const fileItem = document.getElementById('deserialize-file-item')
+const invalidScene = document.getElementById('invalid-scene')
+const invalidSceneMessage = document.getElementById('invalid-scene-message')
+
+sceneDialog.showError = (msg) => {
+  invalidSceneMessage.textContent = `Could not load the selected scene: ${msg}`
+  invalidScene.classList.remove('hidden')
+}
+
+sceneDialog.hideError = (msg) => {
+  invalidScene.classList.add('hidden')
+}
 
 scenes.forEach((scene) => {
   const option = document.createElement('option')
@@ -1537,19 +1581,27 @@ select.addEventListener('change', () => {
     const scene = scenes[select.selectedIndex - 1]
     sceneName.textContent = scene.meta.name || sceneNames[select.selectedIndex - 1]
     sceneDescription.textContent = scene.meta.description || sceneName.textContent
+    sceneDialog.hideError()
   }
 })
 
 document.getElementById('load-scene').addEventListener('click', sceneDialog.submit = () => {
   if (select.selectedIndex === 0) {
     reader.onload = function () {
-      Deserializer.deserialize(reader.result)
-      sceneDialog.close()
+      Deserializer.deserialize(reader.result, (err) => {
+        if (err) {
+          sceneDialog.showError(err)
+        } else {
+          sceneDialog.close()
+          sceneDialog.hideError()
+        }
+      })
     }
     reader.readAsText(file.files[0])
   } else {
     Deserializer.selectScene(scenes[select.selectedIndex - 1])
     sceneDialog.close()
+    sceneDialog.hideError()
   }
 })
 
@@ -1559,20 +1611,33 @@ const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
 const ui = require('../../ui/ui.js')
 
+// create the settings dialog
 const settingsDialog = module.exports = new Dialog(document.getElementById('settings-dialog'))
 
 // get the input elements
 const translationX = document.getElementById('settings-translation-x')
 const translationY = document.getElementById('settings-translation-y')
 const scalingFactor = document.getElementById('settings-scaling-factor')
+const drawHistory = document.getElementById('settings-draw-history')
+const drawControls = document.getElementById('settings-draw-controls')
+const drawLabels = document.getElementById('settings-draw-labels')
 const timeFactor = document.getElementById('settings-time-factor')
+
+// the checked state of checkboxes is cached, so we need to check and uncheck them ourselves if we want them to be (un)checked by default
+drawHistory.checked = true
+drawControls.checked = true
+drawLabels.checked = false
 
 // set the filter logic of the input elements
 settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFactor)
 settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
+// set the input values when the dialog is opened
 settingsDialog.setValues = () => {
+  drawHistory.checked = animation.drawHistory
+  drawControls.checked = animation.drawControls
+  drawLabels.checked = animation.drawLabels
   settingsDialog.set({
     'translation-x': animation.translation[0].toExponential(3),
     'translation-y': animation.translation[1].toExponential(3),
@@ -1582,8 +1647,8 @@ settingsDialog.setValues = () => {
 }
 
 document.getElementById('center-viewport').addEventListener('click', () => {
-  animation.translation[0] = 0
-  animation.translation[1] = 0
+  animation.translation[0] = translationX.value = 0
+  animation.translation[1] = translationY.value = 0
 
   ui.selectedObject = null
 })
@@ -1593,6 +1658,9 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
     animation.translation[0] = Number(translationX.value)
     animation.translation[1] = Number(translationY.value)
     animation.ratio = Number(scalingFactor.value)
+    animation.drawHistory = drawHistory.checked
+    animation.drawControls = drawControls.checked
+    animation.drawLabels = drawLabels.checked
     settingsDialog.close()
     content.TIME_FACTOR = Number(timeFactor.value)
     animation.shouldRender = true
@@ -1653,6 +1721,7 @@ module.exports = function () {
     this.dialogs.sceneDialog.open()
   })
   document.getElementById('cancel-scene').addEventListener('click', () => {
+    this.dialogs.sceneDialog.hideError()
     this.dialogs.sceneDialog.close()
   })
   document.getElementById('settings-cancel').addEventListener('click', () => {
@@ -1832,7 +1901,6 @@ const ui = module.exports = ASTRO.ui = {
     if (!object) {
       return
     }
-
 
     let index
     const {length} = objects
