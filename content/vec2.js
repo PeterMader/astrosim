@@ -30,6 +30,22 @@ module.exports = class Vec2 {
     return out
   }
 
+  static center (list, result) {
+    let out = result
+    if (!out) {
+      out = Vec2.create()
+    }
+    let index, x = 0, y = 0, count = 0
+    for (index in list) {
+      x = (x * count + list[index][0]) / (count + 1)
+      y = (y * count + list[index][1]) / (count + 1)
+      count += 1
+    }
+    out[0] = x
+    out[1] = y
+    return out
+  }
+
   static add (a, b, result) {
     let out = result
     if (!out) {

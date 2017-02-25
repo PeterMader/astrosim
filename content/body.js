@@ -1,7 +1,6 @@
-const Vec2 = require('./vec2.js')
 const Color = require('../animation/color.js')
-const {content} = require('../astrosim.js')
-const ASTRO = require('../astrosim.js')
+const content = require('./content.js')
+const Vec2 = require('./vec2.js')
 
 module.exports = class Body {
   constructor (position, mass, radius, name) {
@@ -63,7 +62,7 @@ module.exports = class Body {
 
   update (deltaTime) {
     // interact with all other objects
-    const {objects} = ASTRO.content
+    const {objects} = content
     let index
     for (index in objects) {
       const body = objects[index]
@@ -76,7 +75,7 @@ module.exports = class Body {
 
   interact (body, objects, bodyIndex, deltaTime) {
     // calculate the distance between the two objects
-    let distance = Vec2.subtract(this.position, body.position, ASTRO.content.temp1)
+    let distance = Vec2.subtract(this.position, body.position, content.temp1)
     const length = Vec2.getLength(distance) || 1e-10
     if (isNaN(distance[0]) || isNaN(distance[1])) {
       distance[0] = distance[1] = 0
@@ -89,31 +88,31 @@ module.exports = class Body {
       const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
 
       // remove the two colliding objects
-      objects.splice(bodyIndex, 1)
-      objects.splice(objects.indexOf(this), 1)
+      content.remove(body)
+      content.remove(this)
 
       // calculate the velocity and the color of the new object
-      const thisMomentum = Vec2.scale(this.velocity, this.mass, ASTRO.content.temp2)
-      const bodyMomentum = Vec2.scale(body.velocity, body.mass, ASTRO.content.temp3)
+      const thisMomentum = Vec2.scale(this.velocity, this.mass, content.temp2)
+      const bodyMomentum = Vec2.scale(body.velocity, body.mass, content.temp3)
       Vec2.add(thisMomentum, bodyMomentum, newBody.velocity)
       Vec2.scale(newBody.velocity, 1 / newBody.mass, newBody.velocity)
       newBody.color = this.color.interpolate(body.color)
 
       // finally add the new object and show it in the UI
-      ASTRO.content.add(newBody)
+      content.add(newBody)
     } else {
       // calculate the gravity
-      const force = ASTRO.content.temp2
+      const force = content.temp2
       Vec2.scale(
-        Vec2.normalize(distance, distance),
-        deltaTime * ASTRO.content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
+        Vec2.normalize(distance, content.temp3),
+        -deltaTime * content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
         force
       )
 
-      // move the bodies
-      // body.applyForce(force)
-      Vec2.scale(force, -1, force)
+      // move the body
       this.applyForce(force)
+
+      content.save(this.id, body.id, Vec2.getLength(force), Vec2.getLength(distance))
     }
   }
 

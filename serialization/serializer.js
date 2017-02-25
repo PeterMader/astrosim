@@ -17,7 +17,7 @@ module.exports = class Serializer {
       ratio: animation.ratio
     }
     data.content = {
-      selectedObject: ui.selectedObject ? ui.selectedObject.serialize() : null,
+      selectedObjectIndices: ui.selectedObjects.map((body) => content.objects.indexOf(body)).sort(),
       objects: content.objects.map((body) => body.serialize()),
       timeFactor: content.TIME_FACTOR
     }

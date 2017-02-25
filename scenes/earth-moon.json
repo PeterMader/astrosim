@@ -6,11 +6,32 @@
   "viewport": {
     "translationX": 0,
     "translationY": 0,
-    "ratio": 1
+    "ratio": 2.5e2,
   },
   "content": {
-    "selectedObject": null,
-    "timeFactor": 1e6,
-    "objects": []
+    "selectedObjectIndices": [],
+    "timeFactor": 1e5,
+    "objects": [
+      {
+        "name": "Earth",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -1.258e1,
+        "mass": 5.974e24,
+        "radius": 6.3674675e6,
+        "color": "#0000ff"
+      },
+      {
+        "name": "Moon",
+        "positionX": 3.844e8,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 1.023e3,
+        "mass": 7.349e22,
+        "radius": 1.738e6,
+        "color": "#888888"
+      }
+    ]
   }
 }

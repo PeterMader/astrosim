@@ -8,6 +8,7 @@ module.exports = class Deserializer {
   static selectScene (data) {
     if (Deserializer.validateData(data)) {
       content.objects = []
+      content.histories = []
       content.currentId = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
@@ -15,7 +16,11 @@ module.exports = class Deserializer {
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
       animation.ratio = data.viewport.ratio
-      animation.selectedObject = Body.fromSerialized(data.content.selectedObject)
+      animation.width = animation.canvas.width * animation.ratio
+      animation.height = animation.canvas.height * animation.ratio
+      ui.selectedObjects = data.content.selectedObjectIndices.map((index) => {
+        return content.objects[index]
+      })
 
       animation.shouldRender = true
       ui.update()
@@ -48,8 +53,9 @@ module.exports = class Deserializer {
       (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&
-      (typeof data.content.selectedObject === 'object') &&
       (Array.isArray(data.content.objects)) &&
+      (Array.isArray(data.content.selectedObjectIndices)) &&
+      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) &&
       data.content.objects.filter((item) => typeof item === 'object')
   }
 
