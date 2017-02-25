@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "TRAPPIST-1",
-    "description": "The 2MASS J23062928-0502285 system (also known as TRAPPIST-1A)."
+    "description": "The 2MASS J23062928-0502285 system (also known as TRAPPIST-1A). Note that Trappist-1h's mass is unknown."
   },
   "viewport": {
     "translationX": 0,
@@ -20,7 +20,7 @@
         "velocityY": 0,
         "mass": 1.6309144e+29,
         "radius": 81472014,
-        "color": "#f06d63"
+        "color": "#ffb257"
       },
       {
         "name": "Trappist-1b",
@@ -30,18 +30,68 @@
         "velocityY": 7.999897961860064e4,
         "mass": 5.07637e+24,
         "radius": 6.918906e6,
-        "color": "#3366ff"
+        "color": "#f9882a"
       },
       {
         "name": "Trappist-1c",
-        "positionX": 2.26778e9,
-        "positionY": 0,
-        "velocityX": 0,
-        "velocityY": 6.837068304792153e4,
+        "positionX": 0,
+        "positionY": 2.26778e9,
+        "velocityX": -6.837068304792153e4,
+        "velocityY": 0,
         "mass": 8.241636e+24,
         "radius": 6.727776e6,
-        "color": "#55AAff"
+        "color": "#d38c43"
       },
+      {
+        "name": "Trappist-1d",
+        "positionX": -3.129e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -5.641619787734072e4,
+        "mass": 2.448602e+24,
+        "radius": 4.918412e6,
+        "color": "#ab8359"
+      },
+      {
+        "name": "Trappist-1e",
+        "positionX": 0,
+        "positionY": -4.172e9,
+        "velocityX": 4.994055069291154e4,
+        "velocityY": 0,
+        "mass": 3.702764e+24,
+        "radius": 5.848578e6,
+        "color": "#aa8677"
+      },
+      {
+        "name": "Trappist-1f",
+        "positionX": 5.513e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 4.3721587579426e4,
+        "mass": 4.061096e+24,
+        "radius": 6.657695e6,
+        "color": "#846a63"
+      },
+      {
+        "name": "Trappist-1g",
+        "positionX": 0,
+        "positionY": 6.705e9,
+        "velocityX": -3.963144443220881e4,
+        "velocityY": 0,
+        "mass": 8.002748e+24,
+        "radius": 7.180117e6,
+        "color": "#a39d6a"
+      },
+      {
+        "name": "Trappist-1h",
+        "positionX": -9.387e9,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -3.4269539862908656e4,
+        "mass": 1,
+        "radius": 4.810105e6,
+        "color": "#ddae83"
+      }
     ]
   }
 }
