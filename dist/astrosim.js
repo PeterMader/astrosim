@@ -64,7 +64,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":11,"../ui/ui.js":28,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec2.js":11,"../ui/ui.js":29,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -196,7 +196,7 @@ module.exports = function () {
   })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":21,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":22,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -360,7 +360,7 @@ animation.render = function () {
   this.drawControls()
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":28,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":29,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
 const Vec2 = require('../content/vec2.js')
 
@@ -427,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":28}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":29}],8:[function(require,module,exports){
 const Color = require('../animation/color.js')
 const content = require('./content.js')
 const Vec2 = require('./vec2.js')
@@ -882,15 +882,15 @@ module.exports={
 }
 
 },{}],14:[function(require,module,exports){
-module.exports=[
-require('./earth-moon.json'),
-require('./empty.json'),
-require('./solar-system.json'),
-require('./sun-earth.json'),
-require('./trappist-1.json'),
-]
+module.exports=[ 
+require('./earth-moon.json'), 
+require('./empty.json'), 
+require('./solar-system.json'), 
+require('./sun-earth.json'), 
+require('./trappist-1.json'), 
+] 
 
-},{"./earth-moon.json":11,"./empty.json":12,"./solar-system.json":14,"./sun-earth.json":15,"./trappist-1.json":16}],14:[function(require,module,exports){
+},{"./earth-moon.json":12,"./empty.json":13,"./solar-system.json":15,"./sun-earth.json":16,"./trappist-1.json":17}],15:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Solar System",
@@ -1058,7 +1058,7 @@ module.exports={
   }
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "TRAPPIST-1",
@@ -1070,7 +1070,7 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e4,
     "objects": [
       {
@@ -1156,7 +1156,8 @@ module.exports={
     ]
   }
 }
-},{}],17:[function(require,module,exports){
+
+},{}],18:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -1220,7 +1221,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":27}],18:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":29}],19:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1263,7 +1264,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":27}],19:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":29}],20:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
@@ -1272,7 +1273,7 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":21}],20:[function(require,module,exports){
+},{"./dialog.js":23}],21:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const detailsDialog = module.exports = new Dialog(document.getElementById('details-dialog'))
@@ -1281,8 +1282,7 @@ document.getElementById('details-submit').addEventListener('click', () => {
   detailsDialog.close()
 })
 
-},{"./dialog.js":22}],21:[function(require,module,exports){
->>>>>>> object-details
+},{"./dialog.js":23}],22:[function(require,module,exports){
 module.exports = {
 
   aboutDialog: null,
@@ -1304,7 +1304,7 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":19,"./new-object-dialog.js":22,"./object-dialog.js":23,"./scene-dialog.js":24,"./settings-dialog.js":25}],21:[function(require,module,exports){
+},{"./about-dialog.js":20,"./details-dialog.js":21,"./new-object-dialog.js":24,"./object-dialog.js":25,"./scene-dialog.js":26,"./settings-dialog.js":27}],23:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 const dialogManager = require('./dialog-manager.js')
@@ -1405,7 +1405,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":27,"./dialog-manager.js":20}],22:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":29,"./dialog-manager.js":22}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1444,7 +1444,7 @@ document.getElementById('new-object-submit').addEventListener('click', newObject
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":10,"./dialog.js":21}],23:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":11,"./dialog.js":23}],25:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1503,7 +1503,7 @@ document.getElementById('object-submit').addEventListener('click', objectDialog.
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],24:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":29,"./dialog.js":23}],26:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1553,7 +1553,7 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
   }
 })
 
-},{"../../scenes/list.js":13,"../../serialization/deserializer.js":17,"./dialog.js":21}],25:[function(require,module,exports){
+},{"../../scenes/list.js":14,"../../serialization/deserializer.js":18,"./dialog.js":23}],27:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1599,7 +1599,7 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":27,"./dialog.js":21}],26:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":29,"./dialog.js":23}],28:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1681,7 +1681,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":18,"../ui/ui.js":27}],27:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":19,"../ui/ui.js":29}],29:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 let content
@@ -1874,4 +1874,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":20,"./event-listeners.js":26}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":22,"./event-listeners.js":28}]},{},[7]);
