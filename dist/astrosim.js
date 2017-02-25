@@ -3,6 +3,7 @@ const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
 const Vec2 = require('../content/vec2.js')
+let ui
 
 const animation = module.exports = ASTRO.animation = {
   MIN_SCALING: 2e-5,
@@ -27,6 +28,10 @@ const animation = module.exports = ASTRO.animation = {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
+
+      if (animation.frames % 50 === 0) {
+        ui.updateHistoryValues()
+      }
     }
     animation.frames += 1
   }),
@@ -43,6 +48,7 @@ const animation = module.exports = ASTRO.animation = {
     const canvas = this.canvas = document.getElementById('canvas')
     this.ctx = canvas.getContext('2d')
     this.adjust()
+    ui = require('../ui/ui.js')
 
     require('./transformation.js')
     require('./render.js')
@@ -58,7 +64,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":10,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec2.js":11,"../ui/ui.js":28,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -190,7 +196,7 @@ module.exports = function () {
   })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":20,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":21,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -250,6 +256,7 @@ module.exports = class Loop {
 const content = require('../content/content.js')
 const animation = require('./animation.js')
 const Body = require('../content/body.js')
+const ui = require('../ui/ui.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.drawCircle = function (x, y, radius, color) {
@@ -294,9 +301,9 @@ animation.render = function () {
   // clear the canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  if (animation.selectedObject instanceof Body) {
+  if (ui.selectedObjects.length > 0) {
     // center the canvas at the selected object's center
-    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL), content.temp1)
+    this.center(Vec2.scale(Vec2.center(ui.selectedObjects.map((object) => object.position), content.temp1), 1 / content.METERS_PER_PIXEL, content.temp1))
   }
 
   if (objects.length > 0) {
@@ -353,7 +360,7 @@ animation.render = function () {
   this.drawControls()
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":10,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":28,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
 const Vec2 = require('../content/vec2.js')
 
@@ -398,7 +405,7 @@ animation.scale = function (factor, centerX, centerY) {
   animation.shouldRender = true
 }
 
-},{"../content/vec2.js":10,"./animation.js":1}],7:[function(require,module,exports){
+},{"../content/vec2.js":11,"./animation.js":1}],7:[function(require,module,exports){
 const Loop = require('./animation/loop.js')
 
 const ASTRO = module.exports = {
@@ -420,11 +427,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":27}],8:[function(require,module,exports){
-const Vec2 = require('./vec2.js')
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":28}],8:[function(require,module,exports){
 const Color = require('../animation/color.js')
-const {content} = require('../astrosim.js')
-const ASTRO = require('../astrosim.js')
+const content = require('./content.js')
+const Vec2 = require('./vec2.js')
 
 module.exports = class Body {
   constructor (position, mass, radius, name) {
@@ -486,7 +492,7 @@ module.exports = class Body {
 
   update (deltaTime) {
     // interact with all other objects
-    const {objects} = ASTRO.content
+    const {objects} = content
     let index
     for (index in objects) {
       const body = objects[index]
@@ -499,7 +505,7 @@ module.exports = class Body {
 
   interact (body, objects, bodyIndex, deltaTime) {
     // calculate the distance between the two objects
-    let distance = Vec2.subtract(this.position, body.position, ASTRO.content.temp1)
+    let distance = Vec2.subtract(this.position, body.position, content.temp1)
     const length = Vec2.getLength(distance) || 1e-10
     if (isNaN(distance[0]) || isNaN(distance[1])) {
       distance[0] = distance[1] = 0
@@ -512,31 +518,31 @@ module.exports = class Body {
       const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
 
       // remove the two colliding objects
-      objects.splice(bodyIndex, 1)
-      objects.splice(objects.indexOf(this), 1)
+      content.remove(body)
+      content.remove(this)
 
       // calculate the velocity and the color of the new object
-      const thisMomentum = Vec2.scale(this.velocity, this.mass, ASTRO.content.temp2)
-      const bodyMomentum = Vec2.scale(body.velocity, body.mass, ASTRO.content.temp3)
+      const thisMomentum = Vec2.scale(this.velocity, this.mass, content.temp2)
+      const bodyMomentum = Vec2.scale(body.velocity, body.mass, content.temp3)
       Vec2.add(thisMomentum, bodyMomentum, newBody.velocity)
       Vec2.scale(newBody.velocity, 1 / newBody.mass, newBody.velocity)
       newBody.color = this.color.interpolate(body.color)
 
       // finally add the new object and show it in the UI
-      ASTRO.content.add(newBody)
+      content.add(newBody)
     } else {
       // calculate the gravity
-      const force = ASTRO.content.temp2
+      const force = content.temp2
       Vec2.scale(
-        Vec2.normalize(distance, distance),
-        deltaTime * ASTRO.content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
+        Vec2.normalize(distance, content.temp3),
+        -deltaTime * content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
         force
       )
 
-      // move the bodies
-      // body.applyForce(force)
-      Vec2.scale(force, -1, force)
+      // move the body
       this.applyForce(force)
+
+      content.save(this.id, body.id, Vec2.getLength(force), Vec2.getLength(distance))
     }
   }
 
@@ -560,9 +566,10 @@ module.exports = class Body {
   }
 }
 
-},{"../animation/color.js":2,"../astrosim.js":7,"./vec2.js":10}],9:[function(require,module,exports){
+},{"../animation/color.js":2,"./content.js":9,"./vec2.js":11}],9:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
+const History = require('./history.js')
 const Vec2 = require('./vec2.js')
 
 const content = module.exports = ASTRO.content = {
@@ -585,28 +592,70 @@ const content = module.exports = ASTRO.content = {
   temp2: Vec2.create(),
   temp3: Vec2.create(),
 
+  histories: [], // 2 dimensional array containing all histories between the planets
+
   initialize () {
     this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
   },
 
   // saves all the objects passed to it and displays them
   add () {
+    const {objects} = this
     let index
     for (index in arguments) {
       const object = arguments[index]
-      this.objects.push(object)
-      object.id = this.currentId += 1
+      object.id = objects.push(object) - 1
+
+      this.addHistory(object.id)
     }
     ASTRO.ui.update()
   },
+
+  addHistory (id) {
+    const {histories} = this
+    const {length} = histories
+    histories[id] = []
+    let index
+    for (index = 0; index < length; index += 1) {
+      if (index !== id) {
+        const force = new History()
+        const distance = new History()
+        const history = {force, distance}
+        histories[index][id] = history
+        histories[id][index] = history
+      }
+    }
+
+    window.hist = histories
+  },
+
+  // save the data of two objects
+  save (idA, idB, force, distance) {
+    this.histories[idA][idB].force.add(force)
+    this.histories[idA][idB].distance.add(distance)
+  },
+
+  // removes an object from the object list
+  remove (item) {
+    const {objects, histories} = this
+    objects.splice(object.id, 1)
+
+    let index
+    for (index in histories) {
+      if (index !== object.id) {
+        histories[index].splice(object.id, 1)
+      }
+    }
+    histories.splice(object.id, 1)
+  },
+
   // calls the 'update' method of all the objects
   update (deltaTime) {
-    this.temp1[0] = this.temp1[1] = this.temp2[0] = this.temp2[1] = this.temp3[0] = this.temp3[1] = 0
-    this.pendingTicks += this.TICKS_PER_FRAME
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
     }
-    const {objects} = ASTRO.content
+    this.pendingTicks += this.TICKS_PER_FRAME
+    const {objects} = this
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaSecs
     let index
@@ -624,19 +673,43 @@ const content = module.exports = ASTRO.content = {
       this.pendingTicks -= 1
     }
   },
+
   // calculates the momentum of all objects
   momentum () {
     return this.objects.reduce((acc, obj) => {
       return Vec2.add(acc, Vec2.scale(obj.velocity, obj.mass))
     }, Vec2.create())
   },
+
   // calculates the velocity of the system
   velocity () {
     return Vec2.scale(this.momentum(), 1 / this.objects.reduce((acc, obj) => acc + obj.mass, 0))
   }
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"./vec2.js":10}],10:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"./history.js":10,"./vec2.js":11}],10:[function(require,module,exports){
+const History = module.exports = class {
+
+  constructor () {
+    this.average = 0
+    this.min = 0
+    this.max = 0
+    this.count = 0
+  }
+
+  add (value) {
+    if (value < this.min || this.count === 0) {
+      this.min = value
+    }
+    if (value > this.max || this.count === 0) {
+      this.max = value
+    }
+    this.average = (this.average * this.count + value) / (this.count += 1)
+  }
+
+}
+
+},{}],11:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -666,6 +739,22 @@ module.exports = class Vec2 {
     const factor = w2 / (w1 + w2)
     out[0] = factor * ((b[0] - a[0]) || 1e-10) + a[0]
     out[1] = factor * ((b[1] - a[1]) || 1e-10) + a[1]
+    return out
+  }
+
+  static center (list, result) {
+    let out = result
+    if (!out) {
+      out = Vec2.create()
+    }
+    let index, x = 0, y = 0, count = 0
+    for (index in list) {
+      x = (x * count + list[index][0]) / (count + 1)
+      y = (y * count + list[index][1]) / (count + 1)
+      count += 1
+    }
+    out[0] = x
+    out[1] = y
     return out
   }
 
@@ -735,7 +824,7 @@ module.exports = class Vec2 {
 
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Earth and Moon",
@@ -744,16 +833,37 @@ module.exports={
   "viewport": {
     "translationX": 0,
     "translationY": 0,
-    "ratio": 1
+    "ratio": 2.5e2,
   },
   "content": {
-    "selectedObject": null,
-    "timeFactor": 1e6,
-    "objects": []
+    "selectedObjectIndices": [],
+    "timeFactor": 1e5,
+    "objects": [
+      {
+        "name": "Earth",
+        "positionX": 0,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": -1.258e1,
+        "mass": 5.974e24,
+        "radius": 6.3674675e6,
+        "color": "#0000ff"
+      },
+      {
+        "name": "Moon",
+        "positionX": 3.844e8,
+        "positionY": 0,
+        "velocityX": 0,
+        "velocityY": 1.023e3,
+        "mass": 7.349e22,
+        "radius": 1.738e6,
+        "color": "#888888"
+      }
+    ]
   }
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Empty Scene",
@@ -765,20 +875,20 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": []
   }
 }
 
-},{}],13:[function(require,module,exports){
-module.exports=[ 
-require('./earth-moon.json'), 
-require('./empty.json'), 
-require('./solar-system.json'), 
-require('./sun-earth.json'), 
-require('./trappist-1.json'), 
-] 
+},{}],14:[function(require,module,exports){
+module.exports=[
+require('./earth-moon.json'),
+require('./empty.json'),
+require('./solar-system.json'),
+require('./sun-earth.json'),
+require('./trappist-1.json'),
+]
 
 },{"./earth-moon.json":11,"./empty.json":12,"./solar-system.json":14,"./sun-earth.json":15,"./trappist-1.json":16}],14:[function(require,module,exports){
 module.exports={
@@ -792,7 +902,7 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": [
       {
@@ -909,7 +1019,7 @@ module.exports={
   }
 }
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Sun and Earth",
@@ -921,7 +1031,7 @@ module.exports={
     "ratio": 1
   },
   "content": {
-    "selectedObject": null,
+    "selectedObjectIndices": [],
     "timeFactor": 1e6,
     "objects": [
       {
@@ -1046,7 +1156,6 @@ module.exports={
     ]
   }
 }
-
 },{}],17:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
@@ -1058,6 +1167,7 @@ module.exports = class Deserializer {
   static selectScene (data) {
     if (Deserializer.validateData(data)) {
       content.objects = []
+      content.histories = []
       content.currentId = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
@@ -1065,7 +1175,11 @@ module.exports = class Deserializer {
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
       animation.ratio = data.viewport.ratio
-      animation.selectedObject = Body.fromSerialized(data.content.selectedObject)
+      animation.width = animation.canvas.width * animation.ratio
+      animation.height = animation.canvas.height * animation.ratio
+      ui.selectedObjects = data.content.selectedObjectIndices.map((index) => {
+        return content.objects[index]
+      })
 
       animation.shouldRender = true
       ui.update()
@@ -1098,8 +1212,9 @@ module.exports = class Deserializer {
       (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&
-      (typeof data.content.selectedObject === 'object') &&
       (Array.isArray(data.content.objects)) &&
+      (Array.isArray(data.content.selectedObjectIndices)) &&
+      (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) &&
       data.content.objects.filter((item) => typeof item === 'object')
   }
 
@@ -1125,7 +1240,7 @@ module.exports = class Serializer {
       ratio: animation.ratio
     }
     data.content = {
-      selectedObject: ui.selectedObject ? ui.selectedObject.serialize() : null,
+      selectedObjectIndices: ui.selectedObjects.map((body) => content.objects.indexOf(body)).sort(),
       objects: content.objects.map((body) => body.serialize()),
       timeFactor: content.TIME_FACTOR
     }
@@ -1158,9 +1273,20 @@ document.getElementById('about-submit').addEventListener('click', () => {
 })
 
 },{"./dialog.js":21}],20:[function(require,module,exports){
+const Dialog = require('./dialog.js')
+
+const detailsDialog = module.exports = new Dialog(document.getElementById('details-dialog'))
+
+document.getElementById('details-submit').addEventListener('click', () => {
+  detailsDialog.close()
+})
+
+},{"./dialog.js":22}],21:[function(require,module,exports){
+>>>>>>> object-details
 module.exports = {
 
   aboutDialog: null,
+  detailsDialog: null,
   settingsDialog: null,
   objectDialog: null,
   newObjectDialog: null,
@@ -1170,6 +1296,7 @@ module.exports = {
 
   initialize () {
     this.aboutDialog = require('./about-dialog.js')
+    this.detailsDialog = require('./details-dialog.js')
     this.settingsDialog = require('./settings-dialog.js')
     this.objectDialog = require('./object-dialog.js')
     this.newObjectDialog = require('./new-object-dialog.js')
@@ -1500,14 +1627,15 @@ module.exports = function () {
   document.getElementById('open-about').addEventListener('click', () => {
     this.dialogs.aboutDialog.open()
   })
+  document.getElementById('open-details').addEventListener('click', () => {
+    ui.updateHistory()
+    this.dialogs.detailsDialog.open()
+  })
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
-    const index = content.objects.indexOf(object)
-    if (index > -1) {
-      content.objects.splice(index, 1)
-      this.update()
-      animation.shouldRender = true
-    }
+    content.remove(object)
+    this.update()
+    animation.shouldRender = true
     this.dialogs.objectDialog.close()
   })
   document.getElementById('object-cancel').addEventListener('click', () => {
@@ -1556,20 +1684,24 @@ module.exports = function () {
 },{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":18,"../ui/ui.js":27}],27:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
-const content = require('../content/content.js')
+let content
 const Body = require('../content/body.js')
 const animation = require('../animation/animation.js')
 
 const ui = module.exports = ASTRO.ui = {
 
-  selectedObject: null,
+  selectedObjects: [],
+  historyObject: null,
   isPlaying: true,
 
   dialogs: require('./dialogs/dialog-manager.js'),
 
   initialize () {
     this.list = document.getElementById('object-list')
+    this.historyTable = document.getElementById('history')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
+
+    content = require('../content/content.js')
 
     require('./event-listeners.js').call(this)
     this.dialogs.initialize()
@@ -1588,15 +1720,6 @@ const ui = module.exports = ASTRO.ui = {
 
       const item = document.createElement('div')
       item.classList.add('object-list-item')
-      item.addEventListener('click', (e) => {
-        if (e.target !== selectButton) {
-          // open properties dialog
-          content.editedObject = object
-          const {objectDialog} = this.dialogs
-          objectDialog.setValues()
-          objectDialog.open()
-        }
-      })
 
       const beforeItem = document.createElement('div')
       beforeItem.classList.add('object-list-item-before')
@@ -1606,43 +1729,132 @@ const ui = module.exports = ASTRO.ui = {
       contentElt.appendChild(beforeItem)
       contentElt.appendChild(document.createTextNode(object.name || 'Object #' + object.id))
 
-      const selectButton = document.createElement('button')
-      selectButton.classList.add('center-button')
-      selectButton.addEventListener('click', () => {
-        if (animation.selectedObject === object) {
-          animation.selectedObject = null
+      const optionsButton = document.createElement('button')
+      optionsButton.classList.add('edit-button')
+      optionsButton.addEventListener('click', () => {
+        // open properties dialog
+        content.editedObject = object
+        const {objectDialog} = this.dialogs
+        objectDialog.setValues()
+        objectDialog.open()
+      })
+
+      const centerButton = document.createElement('button')
+      centerButton.classList.add('center-button')
+      centerButton.addEventListener('click', () => {
+        // add object to selection
+        const {selectedObjects} = ui
+        let selectionIndex
+        if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
+          selectedObjects.splice(selectionIndex, 1)
+          item.classList.remove('selected-object')
         } else {
-          animation.selectedObject = object
+          selectedObjects.push(object)
+          item.classList.add('selected-object')
         }
-        this.updateSelection()
+
         animation.shouldRender = true
       })
 
+      const buttonWrapper = document.createElement('div')
+      buttonWrapper.appendChild(optionsButton)
+      buttonWrapper.appendChild(centerButton)
+
       item.appendChild(contentElt)
-      item.appendChild(selectButton)
+      item.appendChild(buttonWrapper)
       list.appendChild(item)
     }
 
     this.updateSelection()
   },
+
   updateSelection () {
-    const selection = animation.selectedObject
-    if (selection !== null && !(selection instanceof Body)) {
+    const selection = ui.selectedObjects
+    const selectionIndices = selection.map((object, index) => index)
+    const {list} = this
+    const children = Array.prototype.slice.call(list.children)
+    const {length} = children
+    let index
+    for (index = 0; index < length; index += 1) {
+      const item = children[index]
+      if (selectionIndices.indexOf(index) > -1) {
+        item.classList.add('selected-object')
+      } else {
+        item.classList.remove('selected-object')
+      }
+    }
+  },
+
+  updateHistory () {
+    const {objects} = content
+    const {historyTable} = this
+    let child = historyTable.firstChild.nextElementSibling.nextElementSibling
+
+    while (child) {
+      const prev = child
+      child = prev.nextSibling
+      historyTable.removeChild(prev)
+    }
+
+    let index = 0, tdIndex = 0
+    for (index in objects) {
+      const tr = document.createElement('tr')
+      const object = objects[index]
+
+      for (tdIndex = 0; tdIndex < 7; tdIndex += 1) {
+        const td = document.createElement('td')
+        tr.appendChild(td)
+      }
+
+      const selectButton = document.createElement('span')
+      selectButton.classList.add('details-list-item-before')
+      selectButton.style.backgroundColor = object.color.hexString()
+      selectButton.addEventListener('click', () => {
+        ui.historyObject = object
+        ui.updateHistoryValues()
+      })
+      const name = document.createElement('span')
+      name.textContent = object.name
+
+      tr.children[0].appendChild(selectButton)
+      tr.children[0].appendChild(name)
+
+      historyTable.appendChild(tr)
+    }
+
+    this.updateHistoryValues()
+  },
+
+  updateHistoryValues () {
+    const object = this.historyObject
+    const {objects} = content
+
+    if (!object) {
       return
     }
 
-    const index = content.objects.indexOf(selection)
-    if (index < 0) {
-      animation.selectedObject = null
-    }
-    const {list} = this
-    Array.prototype.slice.call(list.children).forEach((item, itemIndex) => {
-      if (index === itemIndex) {
-        item.classList.add('selected-object')
-      } else if (item.classList.contains('selected-object')) {
-        item.classList.remove('selected-object')
+
+    let index
+    const {length} = objects
+    for (index = 0; index < length; index += 1) {
+      const tr = this.historyTable.children[index + 1]
+      if (index === object.id) {
+        tr.children[1].textContent = '-'
+        tr.children[2].textContent = '-'
+        tr.children[3].textContent = '-'
+        tr.children[4].textContent = '-'
+        tr.children[5].textContent = '-'
+        tr.children[6].textContent = '-'
+      } else {
+        const history = content.histories[object.id][index]
+        tr.children[1].textContent = history.force.average.toExponential(3)
+        tr.children[2].textContent = history.force.min.toExponential(3)
+        tr.children[3].textContent = history.force.max.toExponential(3)
+        tr.children[4].textContent = history.distance.average.toExponential(3)
+        tr.children[5].textContent = history.distance.min.toExponential(3)
+        tr.children[6].textContent = history.distance.max.toExponential(3)
       }
-    })
+    }
   },
 
   pause () {

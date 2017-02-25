@@ -25,14 +25,15 @@ module.exports = function () {
   document.getElementById('open-about').addEventListener('click', () => {
     this.dialogs.aboutDialog.open()
   })
+  document.getElementById('open-details').addEventListener('click', () => {
+    ui.updateHistory()
+    this.dialogs.detailsDialog.open()
+  })
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
-    const index = content.objects.indexOf(object)
-    if (index > -1) {
-      content.objects.splice(index, 1)
-      this.update()
-      animation.shouldRender = true
-    }
+    content.remove(object)
+    this.update()
+    animation.shouldRender = true
     this.dialogs.objectDialog.close()
   })
   document.getElementById('object-cancel').addEventListener('click', () => {

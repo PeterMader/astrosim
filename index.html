@@ -26,6 +26,7 @@
         <div class="main-button icon-before" id="open-new-object-dialog">Create new object</div>
         <div class="main-button icon-before" id="serialize-button">Save scene</div>
         <div class="main-button icon-before" id="open-scene">Scene</div>
+        <div class="main-button icon-before" id="open-details">Object details</div>
         <div class="main-button icon-before" id="open-about">About AstroSim</div>
       </div>
       <h3>Objects</h3>
@@ -59,6 +60,27 @@
         <div class="item">
           <button type="button" id="load-scene">Load scene</button>
           <button type="button" id="cancel-scene">Cancel</button>
+        </div>
+      </div>
+
+      <div id="details-dialog">
+        <h3>Details</h3>
+        Click one of the colored spots to select an object.
+        <table>
+          <tbody id="history">
+            <tr>
+              <td></td>
+              <td>Average force</td>
+              <td>Minimum force</td>
+              <td>Maximum force</td>
+              <td>Average distance</td>
+              <td>Minimum distance</td>
+              <td>Maximum distance</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="item">
+          <button type="button" id="details-submit">Done</button>
         </div>
       </div>
 

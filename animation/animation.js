@@ -2,6 +2,7 @@ const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
 const Vec2 = require('../content/vec2.js')
+let ui
 
 const animation = module.exports = ASTRO.animation = {
   MIN_SCALING: 2e-5,
@@ -26,6 +27,10 @@ const animation = module.exports = ASTRO.animation = {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
+
+      if (animation.frames % 50 === 0) {
+        ui.updateHistoryValues()
+      }
     }
     animation.frames += 1
   }),
@@ -42,6 +47,7 @@ const animation = module.exports = ASTRO.animation = {
     const canvas = this.canvas = document.getElementById('canvas')
     this.ctx = canvas.getContext('2d')
     this.adjust()
+    ui = require('../ui/ui.js')
 
     require('./transformation.js')
     require('./render.js')
