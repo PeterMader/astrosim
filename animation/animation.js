@@ -43,7 +43,9 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
-    this.ctx = canvas.getContext('2d')
+    this.ctx = canvas.getContext('2d', {
+      alpha: false // since the alpha channel is not used, this will speed up drawing
+    })
     this.adjust()
     ui = require('../ui/ui.js')
 
