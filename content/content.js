@@ -33,6 +33,7 @@ const content = module.exports = ASTRO.content = {
       const object = arguments[index]
       this.objects.push(object)
       object.id = this.currentId += 1
+      ASTRO.animation.renderer.prepareObject(object)
     }
     ASTRO.ui.update()
   },

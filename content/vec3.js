@@ -1,7 +1,7 @@
 module.exports = class Vec3 {
 
   static create (x, y, z) {
-    const newVector = new Float32Array(3)
+    const newVector = new Float32Array(4)
     newVector[0] = x || 0
     newVector[1] = y || 0
     newVector[2] = z || 0

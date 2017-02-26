@@ -1,10 +1,10 @@
 module.exports = `
 precision mediump float;
 
-varying vec4 vColor;
+uniform vec3 uObjectColor;
 
 void main(void) {
-  gl_FragColor = vColor;
+  gl_FragColor = vec4(uObjectColor, 1.0);
 }
 
 `

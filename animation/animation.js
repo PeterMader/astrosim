@@ -1,6 +1,8 @@
 const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
+const Renderer = require('./renderer.js')
+const Camera = require('./camera.js')
 const Vec3 = require('../content/vec3.js')
 
 const animation = module.exports = ASTRO.animation = {
@@ -24,8 +26,12 @@ const animation = module.exports = ASTRO.animation = {
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
-      animation.render()
+      if (animation.selectedObject) {
+        animation.center(animation.selectedObject.position)
+      }
+      animation.renderer.render(animation.camera)
       animation.shouldRender = false
+
     }
     animation.frames += 1
   }),
@@ -40,12 +46,13 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
-    this.ctx = canvas.getContext('2d')
+    const camera = this.camera = new Camera()
+    this.renderer = new Renderer(canvas)
+    camera.position[2] = -2
     this.adjust()
 
     require('./transformation.js')
-    require('./render.js')
-    require('./event-listeners.js')()
+    require('./event-listeners.js').call(this)
 
     this.animationLoop.start()
   },

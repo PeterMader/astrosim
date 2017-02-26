@@ -1,5 +1,7 @@
 const Vec3 = require('./vec3.js')
+const Mat4 = require('./mat4.js')
 const Color = require('../animation/color.js')
+const Sphere = require('./sphere.js')
 const {content} = require('../astrosim.js')
 const ASTRO = require('../astrosim.js')
 
@@ -11,6 +13,8 @@ module.exports = class Body {
     this.radius = radius
     this.color = new Color()
     this.name = name
+
+    this.model = new Sphere(radius)
 
     // remember the last 100 positions
     this.history = new Float32Array(300)

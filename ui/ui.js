@@ -3,6 +3,7 @@ const {mainLoop} = ASTRO
 const content = require('../content/content.js')
 const Body = require('../content/body.js')
 const animation = require('../animation/animation.js')
+const Keyboard = require('./keyboard.js')
 
 const ui = module.exports = ASTRO.ui = {
 
@@ -10,6 +11,7 @@ const ui = module.exports = ASTRO.ui = {
   isPlaying: true,
 
   dialogs: require('./dialogs/init-dialogs.js'),
+  keyboard: new Keyboard(),
 
   initialize () {
     this.list = document.getElementById('object-list')

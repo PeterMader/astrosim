@@ -2,6 +2,8 @@
 const ASTRO = require('../astrosim.js')
 const Loop = require('./loop.js')
 const {mainLoop} = ASTRO
+const Renderer = require('./renderer.js')
+const Camera = require('./camera.js')
 const Vec3 = require('../content/vec3.js')
 
 const animation = module.exports = ASTRO.animation = {
@@ -25,8 +27,12 @@ const animation = module.exports = ASTRO.animation = {
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
-      animation.render()
+      if (animation.selectedObject) {
+        animation.center(animation.selectedObject.position)
+      }
+      animation.renderer.render(animation.camera)
       animation.shouldRender = false
+
     }
     animation.frames += 1
   }),
@@ -41,12 +47,13 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
-    this.ctx = canvas.getContext('2d')
+    const camera = this.camera = new Camera()
+    this.renderer = new Renderer(canvas)
+    camera.position[2] = -2
     this.adjust()
 
     require('./transformation.js')
-    require('./render.js')
-    require('./event-listeners.js')()
+    require('./event-listeners.js').call(this)
 
     this.animationLoop.start()
   },
@@ -58,7 +65,52 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec3.js":11,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":10,"../content/vec3.js":19,"./camera.js":2,"./event-listeners.js":4,"./loop.js":6,"./renderer.js":7,"./transformation.js":8}],2:[function(require,module,exports){
+const Mat4 = require('../content/mat4.js')
+const Vec3 = require('../content/vec3.js')
+
+module.exports = class Camera {
+
+  constructor () {
+    this.matrix = Mat4.identity()
+    this.position = Vec3.create(0, 0, 0)
+    this.upwards = Vec3.create(0, 0, 1)
+    this.rotationX = 0
+    this.rotationY = 0
+    this.rotationZ = 0
+    this.rotateY(0)
+  }
+
+  updateMatrix () {
+    const pos = this.position
+    Mat4.identity(this.matrix)
+    Mat4.rotateX(this.matrix, this.rotationX, this.matrix)
+    Mat4.rotateY(this.matrix, this.rotationY, this.matrix)
+    Mat4.rotateZ(this.matrix, this.rotationZ, this.matrix)
+    Mat4.translate(this.matrix, [-pos[0], -pos[1], -pos[2]], this.matrix)
+  }
+
+  moveForward (distance) {
+    this.position[0] -= Math.sin(-this.rotationY) * distance
+    this.position[2] -= Math.cos(-this.rotationY) * distance
+  }
+
+  moveLeft (distance) {
+    this.position[0] -= Math.sin(-this.rotationY - Math.PI / 2) * distance
+    this.position[2] -= Math.cos(-this.rotationY - Math.PI / 2) * distance
+  }
+
+  rotateY (angle) {
+    this.rotationY += angle
+  }
+
+  rotateX (angle) {
+    this.rotationX += angle
+  }
+
+}
+
+},{"../content/mat4.js":14,"../content/vec3.js":19}],3:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -121,18 +173,22 @@ module.exports = class Color {
   }
 }
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 const animation = require('./animation.js')
+const math = require('../content/math.js')
+const ui = require('../ui/ui.js')
 
 module.exports = function () {
   const {canvas} = this
+  const camera = animation.camera
 
   const translate = (e) => {
     if (!mouseHeld) {
       return
     }
 
-    animation.translate(startX - e.clientX, startY - e.clientY)
+    camera.rotateY((startX - e.clientX) * .0004)
+    camera.rotateX((startY - e.clientY) * .0004)
 
     document.body.position = 'absolute'
   }
@@ -143,11 +199,8 @@ module.exports = function () {
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
-    const factor = e.deltaY > 0 ? -1 : 1
-    const clientX = (e.clientX - canvas.offsetLeft) || (canvas.width / 2)
-    const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
-
-    animation.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
+    const factor = e.deltaY > 0 ? -10 : 10
+    camera.moveForward(factor)
   })
 
   // events for the canvas translation
@@ -167,9 +220,74 @@ module.exports = function () {
   document.body.addEventListener('mouseup', () => {
     mouseHeld = false
   })
+
+  const {keyboard} = ui
+  keyboard.on('w', () => {
+    camera.moveForward(.2)
+  })
+
+  keyboard.on('s', () => {
+    camera.moveForward(-.2)
+  })
+
+  keyboard.on('a', () => {
+    camera.moveLeft(-.2)
+  })
+
+  keyboard.on('d', () => {
+    camera.moveLeft(.2)
+  })
+
+  keyboard.on('Enter', () => {
+    camera.upwards = [0, 0, camera.upwards[2] === 1 ? -1 : 1]
+  })
+
+  keyboard.on('PageUp', () => {
+    camera.position[1] += .01
+  })
+
+  keyboard.on('PageDown', () => {
+    camera.position[1] -= .01
+  })
+
+  keyboard.on(' ', () => {
+    camera.position[1] = 2
+  })
+
+  keyboard.on('ArrowUp', () => {
+    if (camera.rotationX > -math.degToRad(20)) {
+      camera.rotationX -= .1
+    }
+  })
+
+  keyboard.on('ArrowDown', () => {
+    if (camera.rotationX < math.degToRad(20)) {
+      camera.rotationX += .1
+    }
+  })
+
+  keyboard.on('ArrowLeft', () => {
+    camera.rotateY(-.005)
+  })
+
+  keyboard.on('ArrowRight', () => {
+    camera.rotateY(.005)
+  })
 }
 
-},{"./animation.js":1}],4:[function(require,module,exports){
+},{"../content/math.js":15,"../ui/ui.js":30,"./animation.js":1}],5:[function(require,module,exports){
+module.exports = `
+precision mediump float;
+
+uniform vec3 uObjectColor;
+
+void main(void) {
+  gl_FragColor = vec4(uObjectColor, 1.0);
+}
+
+`
+
+},{}],6:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -225,143 +343,178 @@ module.exports = class Loop {
   }
 }
 
-},{}],5:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+const vertexShaderCode = require('./vertex-shader.js')
+const fragmentShaderCode = require('./fragment-shader.js')
 const content = require('../content/content.js')
-const animation = require('./animation.js')
-const Body = require('../content/body.js')
-const Vec2 = require('../content/vec2.js')
+const Mat4 = require('../content/mat4.js')
 const Vec3 = require('../content/vec3.js')
 
-animation.drawCircle = function (x, y, radius, color) {
-  const {ctx} = this
-  ctx.fillStyle = color
+const Renderer = module.exports = class {
 
-  // draw the circle shape and fill it
-  ctx.beginPath()
-  ctx.moveTo(x, y - radius)
+  constructor (canvas) {
+    if (!canvas) {
+      return
+    }
 
-  ctx.arc(x, y, radius, 0, Math.PI * 2, true)
-  ctx.fill()
-}
+    this.canvas = canvas
 
-animation.drawControls = function () {
-  const {translation, ratio, canvas, ctx} = this
-
-  // draw the center point
-  const x = translation[0] / (translation[2] || 1e-10) + canvas.width / 2
-  const y = translation[1] / (translation[2] || 1e-10) + canvas.height / 2
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.beginPath()
-  ctx.moveTo(x, y - 10)
-  ctx.lineTo(x, y + 10)
-  ctx.moveTo(x - 10, y)
-  ctx.lineTo(x + 10, y)
-  ctx.stroke()
-
-
-  // ctx.beginPath()
-  // ctx.moveTo(1 / (object.position[2] - offsetZ) || 1e-10 / content.METERS_PER_PIXEL)
-
-  // draw the unit
-  ctx.fillStyle = '#FFFFFF'
-  const unit = 200
-  const width = (unit * content.METERS_PER_PIXEL).toExponential(2)
-  ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
-  const metrics = ctx.measureText(width)
-  ctx.fillText(width, canvas.width - unit / 2 - metrics.width / 2 - 20, canvas.height - 40)
-}
-
-animation.render = function () {
-  const {ctx, canvas} = this
-  const objects = content.objects.sort((a, b) => {
-    const z1 = a.position[2]
-    const z2 = b.position[2]
-    return z1 > z2 ? -1 : z1 < z2 ? 1 : 0
-  })
-
-  // clear the canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-  if (animation.selectedObject instanceof Body) {
-    // center the canvas at the selected object's center
-    this.center(Vec2.scale(animation.selectedObject.position, 1 / content.METERS_PER_PIXEL, content.temp1))
+    this.init()
   }
 
-  if (objects.length > 0) {
-    canvasCenter = content.temp1
-    canvasCenter[0] = canvas.width / 2
-    canvasCenter[1] = canvas.height / 2
-    const pos = content.temp2
-    const offsetX = this.translation[0] + canvasCenter[0]
-    const offsetY = this.translation[1] + canvasCenter[1]
-    const offsetZ = this.translation[2]
+  getWebGlContext (canvas) {
+    let gl
+    try {
+      // try to get the proper webgl context
+      gl = canvas.getContext('webgl')
+    } catch (e) {
+      console.log('Could not create WebGl context; trying to create experimental WebGl context: ', e.getMessage())
+      try {
+        // try to get the experimental webgl context
+        gl = canvas.getContext('experimental-webgl')
+      } catch (e) {
+        console.log('Could not create experimental WebGl context: ', e.getMessage())
+      }
+    }
+    return gl
+  }
+
+  createShader (src, type) {
+    const {gl} = this
+    const shader = gl.createShader(type)
+    gl.shaderSource(shader, src)
+    gl.compileShader(shader)
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.log('Could not compile shader: ', gl.getShaderInfoLog(shader))
+      return null
+    }
+
+    return shader
+  }
+
+  init () {
+    const gl = this.gl = this.getWebGlContext(canvas)
+    if (!this.gl) {
+      return
+    }
+
+    const program = this.program = this.createProgram(vertexShaderCode, fragmentShaderCode)
+    if (!program) {
+      return
+    }
+
+    gl.useProgram(program)
+
+    program.vertexPositionAttribute = gl.getAttribLocation(program, 'aVertexPosition')
+    gl.enableVertexAttribArray(program.vertexPositionAttribute)
+
+    program.projectionMatrixUniform = gl.getUniformLocation(program, 'uProjectionMatrix')
+    program.viewMatrixUniform = gl.getUniformLocation(program, 'uViewMatrix')
+    program.modelMatrixUniform = gl.getUniformLocation(program, 'uModelMatrix')
+
+    program.objectColorUniform = gl.getUniformLocation(program, 'uObjectColor')
+
+    gl.clearColor(.3, .3, .4, 1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+    // temp!!!
+    gl.enable(gl.DEPTH_TEST)
+    gl.depthFunc(gl.LEQUAL)
+  }
+
+  createBuffer (data, bufferType) {
+    const {gl} = this
+    const buffer = gl.createBuffer()
+    gl.bindBuffer(bufferType, buffer)
+    gl.bufferData(bufferType, data, gl.STATIC_DRAW)
+    return buffer
+  }
+
+  createProgram (vertexShaderCode, fragmentShaderCode) {
+    const {gl} = this
+
+    // create the two shaders
+    const vertexShader = this.createShader(vertexShaderCode, gl.VERTEX_SHADER)
+    const fragmentShader = this.createShader(fragmentShaderCode, gl.FRAGMENT_SHADER)
+
+    if (!vertexShader || !fragmentShader) {
+      return null
+    }
+
+    const program = gl.createProgram()
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.log('Could not link shader program: ', gl.getProgramInfoLog(program))
+      return null
+    }
+
+    return program
+  }
+
+  prepareObject (object) {
+    const {gl} = this
+    object.vertexPositionBuffer = this.createBuffer(object.model.vertices, gl.ARRAY_BUFFER)
+    object.vertexIndexBuffer = this.createBuffer(object.model.indices, gl.ELEMENT_ARRAY_BUFFER)
+  }
+
+  render (camera) {
+    const {canvas, gl, program} = this
+    const {objects} = content
+
+    camera.updateMatrix()
+    const view = Mat4.copy(camera.matrix)
+    const projection = Mat4.create()
+    Mat4.perspective(projection, 45, canvas.width / canvas.height, 0.1, 100)
+
+    gl.viewport(0, 0, canvas.width, canvas.height)
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+    const model = Mat4.create()
 
     let index
-    // walk over each object and draw it
     for (index in objects) {
-      const object = objects[index]
-      const factor = 1 / content.METERS_PER_PIXEL
-      const distance = ((object.position[2] - offsetZ) || 1e-10) / content.METERS_PER_PIXEL
-      if (distance < 0) {
-        continue
-      }
-      Vec3.scale(object.position, factor, pos)
-      pos[0] += this.translation[0]
-      pos[1] += this.translation[1]
-      pos[0] /= distance
-      pos[1] /= distance
-      pos[0] += canvasCenter[0]
-      pos[1] += canvasCenter[1]
+      // draw a single item
+      const item = objects[index]
 
-      // calculate the circle's radius
-      const radius = object.radius / distance
-      const color = object.color.hexString()
+      const {vertexPositionBuffer, vertexIndexBuffer} = item
 
-      // draw the circle
-      this.drawCircle(pos[0], pos[1], Math.max(radius, 1), color)
+      // calculate the model-view-matrix
+      Mat4.identity(model)
+      Mat4.translate(model, item.position, model)
 
-      if (animation.drawHistory && false) {
-        // draw the object's trace
-        ctx.beginPath()
-        ctx.strokeStyle = color
-        let i
-        const {history} = object
-        if (object.historyOverflow) {
-          // start at the index
-          const length = history.length
-          ctx.moveTo(history[object.historyIndex] * factor + offsetX, history[object.historyIndex + 1] * factor + offsetY)
-          for (i = object.historyIndex + 2; i < length; i += 2) {
-            ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
-          }
-          for (i = 0; i < object.historyIndex; i += 2) {
-            ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
-          }
-        } else {
-          ctx.moveTo(history[0] * factor + offsetX, history[1] * factor + offsetY)
-          for (i = 2; i < object.historyIndex; i += 2) {
-            ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
-          }
-        }
-        ctx.lineTo(pos[0], pos[1])
-        ctx.stroke()
-      }
+      // set the vertex positions
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer)
+      gl.vertexAttribPointer(program.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0)
+
+      // set matrix uniforms
+      gl.uniformMatrix4fv(program.projectionMatrixUniform, false, projection)
+      gl.uniformMatrix4fv(program.viewMatrixUniform, false, view)
+      gl.uniformMatrix4fv(program.modelMatrixUniform, false, model)
+
+      gl.uniform3f(program.objectColorUniform, item.color.r / 255, item.color.g / 255, item.color.b / 255)
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer)
+      gl.drawElements(gl.TRIANGLES, item.model.numberOfIndices, gl.UNSIGNED_SHORT, 0)
     }
   }
 
-  // finally, draw the center cross and the measure unit
-  this.drawControls()
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":10,"../content/vec3.js":11,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/content.js":12,"../content/mat4.js":14,"../content/vec3.js":19,"./fragment-shader.js":5,"./vertex-shader.js":9}],8:[function(require,module,exports){
 const animation = require('./animation.js')
 const content = require('../content/content.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.center = function (pos) {
-  // Vec2.scale(pos, -this.ratio, this.translation)
-  this.translation[0] = pos[0]
-  this.translation[1] = pos[1]
-  this.translation[2] = .5
+  this.camera.position[0] = pos[0]
+  this.camera.position[1] = pos[1]
+  this.camera.position[2] = pos[2] + 10
+  this.camera.rotationX = this.camera.rotationY = this.camera.rotationZ = 0
 }
 
 animation.translate = function (x, y) {
@@ -376,7 +529,22 @@ animation.scale = function (factor, centerX, centerY) {
   animation.shouldRender = true
 }
 
-},{"../content/content.js":9,"../content/vec2.js":10,"./animation.js":1}],7:[function(require,module,exports){
+},{"../content/content.js":12,"../content/vec2.js":18,"./animation.js":1}],9:[function(require,module,exports){
+module.exports = `
+precision mediump float;
+
+attribute vec3 aVertexPosition;
+
+uniform mat4 uModelMatrix;
+uniform mat4 uProjectionMatrix;
+uniform mat4 uViewMatrix;
+
+void main(void) {
+  gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aVertexPosition, 1.0);
+}
+`
+
+},{}],10:[function(require,module,exports){
 const Loop = require('./animation/loop.js')
 
 const ASTRO = module.exports = {
@@ -398,9 +566,11 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":21}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":6,"./content/content.js":12,"./ui/ui.js":30}],11:[function(require,module,exports){
 const Vec3 = require('./vec3.js')
+const Mat4 = require('./mat4.js')
 const Color = require('../animation/color.js')
+const Sphere = require('./sphere.js')
 const {content} = require('../astrosim.js')
 const ASTRO = require('../astrosim.js')
 
@@ -412,6 +582,8 @@ module.exports = class Body {
     this.radius = radius
     this.color = new Color()
     this.name = name
+
+    this.model = new Sphere(radius)
 
     // remember the last 100 positions
     this.history = new Float32Array(300)
@@ -546,7 +718,7 @@ module.exports = class Body {
   }
 }
 
-},{"../animation/color.js":2,"../astrosim.js":7,"./vec3.js":11}],9:[function(require,module,exports){
+},{"../animation/color.js":3,"../astrosim.js":10,"./mat4.js":14,"./sphere.js":17,"./vec3.js":19}],12:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
 const Vec3 = require('./vec3.js')
@@ -582,6 +754,7 @@ const content = module.exports = ASTRO.content = {
       const object = arguments[index]
       this.objects.push(object)
       object.id = this.currentId += 1
+      ASTRO.animation.renderer.prepareObject(object)
     }
     ASTRO.ui.update()
   },
@@ -624,7 +797,431 @@ const content = module.exports = ASTRO.content = {
   }
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"./vec3.js":11}],10:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":10,"./vec3.js":19}],13:[function(require,module,exports){
+module.exports = class EventEmitter {
+
+  constructor () {
+    this._events = []
+  }
+
+  on (channel, callback) {
+    const events = this._events
+    if (Array.isArray(events[channel])) {
+      events[channel].push(callback)
+    } else {
+      events[channel] = [callback]
+    }
+    return this
+  }
+
+  once (channel, callback) {
+    const events = this._events
+    const func = function () {
+      callback.apply(self, Array.prototype.slice.call(arguments))
+      events[channel].splice([events[channel].indexOf(func)], 1)
+    }
+    if (Array.isArray(events[channel])) {
+      events[channel].push(func)
+    } else {
+      events[channel] = [func]
+    }
+    return this
+  }
+
+  emit (channel) {
+    const events = this._events
+    const args = Array.prototype.slice.call(arguments, 1)
+    if (Array.isArray(events[channel])) {
+      events[channel].forEach((cb) => {
+        cb.apply(self, args)
+      })
+    }
+  }
+
+}
+
+},{}],14:[function(require,module,exports){
+module.exports = class Mat4 {
+
+  static create () {
+    return new Float32Array(16)
+  }
+
+  static copy (src, dest) {
+    if (!dest) {
+      return new Float32Array(src)
+    }
+    let i
+    for (i = 0; i < 16; i += 1) {
+      dest[i] = src[i]
+    }
+    return dest
+  }
+
+  static identity (result) {
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    return Mat4.copy(new Float32Array([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1
+    ]), out)
+  }
+
+  static multiply (a, b, result) {
+    const [
+      a00, a01, a02, a03,
+      a10, a11, a12, a13,
+      a20, a21, a22, a23,
+      a30, a31, a32, a33
+    ] = a
+
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+
+    let [b0, b1, b2, b3] = b
+    out[0] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30
+    out[1] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31
+    out[2] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32
+    out[3] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33
+
+    b0 = b[4]
+    b1 = b[5]
+    b2 = b[6]
+    b3 = b[7]
+    out[4] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30
+    out[5] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31
+    out[6] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32
+    out[7] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33
+
+    b0 = b[8]
+    b1 = b[9]
+    b2 = b[10]
+    b3 = b[11]
+    out[8] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30
+    out[9] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31
+    out[10] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32
+    out[11] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33
+
+    b0 = b[12]
+    b1 = b[13]
+    b2 = b[14]
+    b3 = b[15]
+    out[12] = b0 * a00 + b1 * a10 + b2 * a20 + b3 * a30
+    out[13] = b0 * a01 + b1 * a11 + b2 * a21 + b3 * a31
+    out[14] = b0 * a02 + b1 * a12 + b2 * a22 + b3 * a32
+    out[15] = b0 * a03 + b1 * a13 + b2 * a23 + b3 * a33
+    return out
+  }
+
+  static translate (mat, vec, result) {
+    const [x, y, z] = vec
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    Mat4.copy(mat, out)
+    out[12] = mat[0] * x + mat[4] * y + mat[8] * z + mat[12]
+    out[13] = mat[1] * x + mat[5] * y + mat[9] * z + mat[13]
+    out[14] = mat[2] * x + mat[6] * y + mat[10] * z + mat[14]
+    out[15] = mat[3] * x + mat[7] * y + mat[11] * z + mat[15]
+
+    return out
+  }
+
+  static scale (mat, vec, result) {
+    const [x, y, z] = vec
+    const res = Mat4.copy(mat)
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    out[0] *= x
+    out[1] *= x
+    out[2] *= x
+    out[3] *= x
+    out[4] *= y
+    out[5] *= y
+    out[6] *= y
+    out[7] *= y
+    out[8] *= z
+    out[9] *= z
+    out[10] *= z
+    out[11] *= z
+    return out
+  }
+
+  static rotateX (mat, angle, result) {
+    const sin = Math.sin(angle),
+      cos = Math.cos(angle),
+      a10 = mat[4],
+      a11 = mat[5],
+      a12 = mat[6],
+      a13 = mat[7],
+      a20 = mat[8],
+      a21 = mat[9],
+      a22 = mat[10],
+      a23 = mat[11]
+
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    out[4] = a10 * cos + a20 * sin
+    out[5] = a11 * cos + a21 * sin
+    out[6] = a12 * cos + a22 * sin
+    out[7] = a13 * cos + a23 * sin
+    out[8] = a20 * cos - a10 * sin
+    out[9] = a21 * cos - a11 * sin
+    out[10] = a22 * cos - a12 * sin
+    out[11] = a23 * cos - a13 * sin
+    return out
+  }
+
+  static rotateY (mat, angle, result) {
+    const sin = Math.sin(angle),
+      cos = Math.cos(angle),
+      a00 = mat[0],
+      a01 = mat[1],
+      a02 = mat[2],
+      a03 = mat[3],
+      a20 = mat[8],
+      a21 = mat[9],
+      a22 = mat[10],
+      a23 = mat[11]
+
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    out[0] = a00 * cos - a20 * sin
+    out[1] = a01 * cos - a21 * sin
+    out[2] = a02 * cos - a22 * sin
+    out[3] = a03 * cos - a23 * sin
+    out[8] = a00 * sin + a20 * cos
+    out[9] = a01 * sin + a21 * cos
+    out[10] = a02 * sin + a22 * cos
+    out[11] = a03 * sin + a23 * cos
+    return out
+  }
+
+  static rotateZ (mat, angle, result) {
+    const sin = Math.sin(angle),
+      cos  = Math.cos(angle),
+      a00 = mat[0],
+      a01 = mat[1],
+      a02 = mat[2],
+      a03 = mat[3],
+      a10 = mat[4],
+      a11 = mat[5],
+      a12 = mat[6],
+      a13 = mat[7]
+
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    out[0] = a00 * cos + a10 * sin
+    out[1] = a01 * cos + a11 * sin
+    out[2] = a02 * cos + a12 * sin
+    out[3] = a03 * cos + a13 * sin
+    out[4] = a10 * cos - a00 * sin
+    out[5] = a11 * cos - a01 * sin
+    out[6] = a12 * cos - a02 * sin
+    out[7] = a13 * cos - a03 * sin
+    return out
+  }
+
+  static perspective (result, fieldOfView, aspect, near, far) {
+    const f = 1.0 / Math.tan(fieldOfView / 2),
+      nf = 1 / (near - far)
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    out[0] = f / aspect
+    out[1] = 0
+    out[2] = 0
+    out[3] = 0
+    out[4] = 0
+    out[5] = f
+    out[6] = 0
+    out[7] = 0
+    out[8] = 0
+    out[9] = 0
+    out[10] = (far + near) * nf
+    out[11] = -1
+    out[12] = 0
+    out[13] = 0
+    out[14] = (2 * far * near) * nf
+    out[15] = 0
+    return out
+  }
+
+  static lookAt (eye, center, upwards, result) {
+    let x0, x1, x2, y0, y1, y2, z0, z1, z2
+
+    z0 = eye[0] - center[0]
+    z1 = eye[1] - center[1]
+    z2 = eye[2] - center[2]
+
+    let len = 1 / Math.sqrt(z0 * z0 + z1 * z1 + z2 * z2)
+    if (len) {
+      z0 *= len
+      z1 *= len
+      z2 *= len
+    }
+
+    x0 = upwards[1] * z2 - upwards[2] * z1
+    x1 = upwards[2] * z0 - upwards[0] * z2
+    x2 = upwards[0] * z1 - upwards[1] * z0
+
+    len = Math.sqrt(x0 * x0 + x1 * x1 + x2 * x2)
+    if (!len) {
+        x0 = 0
+        x1 = 0
+        x2 = 0
+    } else {
+        len = 1 / len
+        x0 *= len
+        x1 *= len
+        x2 *= len
+    }
+
+    y0 = z1 * x2 - z2 * x1
+    y1 = z2 * x0 - z0 * x2
+    y2 = z0 * x1 - z1 * x0
+
+    len = Math.sqrt(y0 * y0 + y1 * y1 + y2 * y2)
+    if (!len) {
+        y0 = 0
+        y1 = 0
+        y2 = 0
+    } else {
+        len = 1 / len
+        y0 *= len
+        y1 *= len
+        y2 *= len
+    }
+
+    let out = result
+    if (!out) {
+      out = Mat4.create()
+    }
+    out[0] = x0
+    out[1] = y0
+    out[2] = z0
+    out[3] = 0
+    out[4] = x1
+    out[5] = y1
+    out[6] = z1
+    out[7] = 0
+    out[8] = x2
+    out[9] = y2
+    out[10] = z2
+    out[11] = 0
+    out[12] = -(x0 * eye[0] + x1 * eye[1] + x2 * eye[2])
+    out[13] = -(y0 * eye[0] + y1 * eye[1] + y2 * eye[2])
+    out[14] = -(z0 * eye[0] + z1 * eye[1] + z2 * eye[2])
+    out[15] = 1
+
+    return out
+  }
+
+}
+
+},{}],15:[function(require,module,exports){
+module.exports = {
+  degToRad (deg) {
+    return deg * 2 * Math.PI / 180
+  }
+}
+
+},{}],16:[function(require,module,exports){
+module.exports = class Model {
+
+  constructor () {
+    this.vertices = new Float32Array()
+    this.numberOfVertices = 0
+    this.indices = new Uint16Array()
+    this.numberOfIndices = 0
+  }
+
+  setVertices (data, number) {
+    this.vertices = new Float32Array(data)
+    this.numberOfVertices = number
+  }
+
+  setIndices (data, number) {
+    this.indices = new Uint16Array(data)
+    this.numberOfIndices = number
+  }
+
+}
+
+},{}],17:[function(require,module,exports){
+const Model = require('./model.js')
+
+const vertices = []
+const indices = []
+
+let latitude = 0
+let longitude = 0
+
+const MAX_LATITUDE = 10
+const MAX_LONGITUDE = 10
+
+for (latitude = 0; latitude <= MAX_LATITUDE; latitude += 1) {
+  const angle1 = latitude * Math.PI / MAX_LATITUDE
+  const sin1 = Math.sin(angle1)
+  const cos1 = Math.cos(angle1)
+
+  for (longitude = 0; longitude <= MAX_LONGITUDE; longitude += 1) {
+    const angle2 = longitude * 2 * Math.PI / MAX_LONGITUDE
+    const sin2 = Math.sin(angle2)
+    const cos2 = Math.cos(angle2)
+
+    const x = sin1 * cos2
+    const y = cos1
+    const z = sin1 * sin2
+
+    vertices.push(x)
+    vertices.push(y)
+    vertices.push(z)
+  }
+}
+
+// this second loop is necessary because we don't need the last item, so the condition is '<', rather than '<='!
+for (latitude = 0; latitude < MAX_LATITUDE; latitude += 1) {
+  for (longitude = 0; longitude < MAX_LONGITUDE; longitude += 1) {
+    const first = (latitude * (MAX_LONGITUDE + 1)) + longitude
+    const second = first + MAX_LONGITUDE + 1
+    indices.push(first)
+    indices.push(second)
+    indices.push(first + 1)
+
+    indices.push(second)
+    indices.push(second + 1)
+    indices.push(first + 1)
+  }
+}
+
+module.exports = class Sphere extends Model {
+
+  constructor (radius) {
+    super()
+    this.setVertices(vertices.map((n) => n * radius), vertices.length / 3)
+    this.setIndices(indices, indices.length)
+  }
+
+}
+
+},{"./model.js":16}],18:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -723,11 +1320,11 @@ module.exports = class Vec2 {
 
 }
 
-},{}],11:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 module.exports = class Vec3 {
 
   static create (x, y, z) {
-    const newVector = new Float32Array(3)
+    const newVector = new Float32Array(4)
     newVector[0] = x || 0
     newVector[1] = y || 0
     newVector[2] = z || 0
@@ -810,7 +1407,7 @@ module.exports = class Vec3 {
 
 }
 
-},{}],12:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -863,7 +1460,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":21}],13:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":11,"../content/content.js":12,"../ui/ui.js":30}],21:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -903,7 +1500,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":21}],14:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":12,"../ui/ui.js":30}],22:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 
@@ -921,7 +1518,7 @@ document.getElementById('deserialize').addEventListener('click', () => {
   reader.readAsText(file.files[0])
 })
 
-},{"../../serialization/deserializer.js":12,"./dialog.js":15}],15:[function(require,module,exports){
+},{"../../serialization/deserializer.js":20,"./dialog.js":23}],23:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 
@@ -1013,7 +1610,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":21}],16:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":30}],24:[function(require,module,exports){
 module.exports = {
 
   settingsDialog: null,
@@ -1029,7 +1626,7 @@ module.exports = {
   }
 }
 
-},{"./deserialize-dialog.js":14,"./new-object-dialog.js":17,"./object-dialog.js":18,"./settings-dialog.js":19}],17:[function(require,module,exports){
+},{"./deserialize-dialog.js":22,"./new-object-dialog.js":25,"./object-dialog.js":26,"./settings-dialog.js":27}],25:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec3 = require('../../content/vec3.js')
@@ -1070,7 +1667,7 @@ document.getElementById('new-object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec3.js":11,"./dialog.js":15}],18:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":3,"../../content/body.js":11,"../../content/content.js":12,"../../content/vec3.js":19,"./dialog.js":23}],26:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1135,7 +1732,7 @@ document.getElementById('object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":21,"./dialog.js":15}],19:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":3,"../../content/content.js":12,"../../ui/ui.js":30,"./dialog.js":23}],27:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1180,7 +1777,7 @@ document.getElementById('settings-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":21,"./dialog.js":15}],20:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":12,"../../ui/ui.js":30,"./dialog.js":23}],28:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1244,12 +1841,39 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":13,"../ui/ui.js":21}],21:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":10,"../content/content.js":12,"../serialization/serializer.js":21,"../ui/ui.js":30}],29:[function(require,module,exports){
+const EventEmitter = require('../content/event-emitter.js')
+
+module.exports = class Keyboard extends EventEmitter {
+
+  constructor () {
+    super()
+
+    this.pressedKeys = {}
+
+    document.addEventListener('keydown', (e) => {
+      this.pressedKeys[e.key] = true
+    })
+
+    document.addEventListener('keyup', (e) => {
+      this.pressedKeys[e.key] = false
+      this.emit(e.key, e)
+    })
+  }
+
+  isKeyPressed (key) {
+    return !!this.pressedKeys[key]
+  }
+
+}
+
+},{"../content/event-emitter.js":13}],30:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
 const Body = require('../content/body.js')
 const animation = require('../animation/animation.js')
+const Keyboard = require('./keyboard.js')
 
 const ui = module.exports = ASTRO.ui = {
 
@@ -1257,6 +1881,7 @@ const ui = module.exports = ASTRO.ui = {
   isPlaying: true,
 
   dialogs: require('./dialogs/init-dialogs.js'),
+  keyboard: new Keyboard(),
 
   initialize () {
     this.list = document.getElementById('object-list')
@@ -1353,4 +1978,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/init-dialogs.js":16,"./event-listeners.js":20}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":10,"../content/body.js":11,"../content/content.js":12,"./dialogs/init-dialogs.js":24,"./event-listeners.js":28,"./keyboard.js":29}]},{},[10]);
