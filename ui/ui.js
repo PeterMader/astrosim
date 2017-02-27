@@ -149,7 +149,6 @@ const ui = module.exports = ASTRO.ui = {
       return
     }
 
-
     let index
     const {length} = objects
     for (index = 0; index < length; index += 1) {

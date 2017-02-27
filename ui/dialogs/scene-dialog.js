@@ -13,6 +13,17 @@ const reader = new FileReader()
 const select = document.getElementById('deserialize-select')
 const list = document.getElementById('deserialize-default')
 const fileItem = document.getElementById('deserialize-file-item')
+const invalidScene = document.getElementById('invalid-scene')
+const invalidSceneMessage = document.getElementById('invalid-scene-message')
+
+sceneDialog.showError = (msg) => {
+  invalidSceneMessage.textContent = `Could not load the selected scene: ${msg}`
+  invalidScene.classList.remove('hidden')
+}
+
+sceneDialog.hideError = (msg) => {
+  invalidScene.classList.add('hidden')
+}
 
 scenes.forEach((scene) => {
   const option = document.createElement('option')
@@ -31,18 +42,26 @@ select.addEventListener('change', () => {
     const scene = scenes[select.selectedIndex - 1]
     sceneName.textContent = scene.meta.name || sceneNames[select.selectedIndex - 1]
     sceneDescription.textContent = scene.meta.description || sceneName.textContent
+    sceneDialog.hideError()
   }
 })
 
 document.getElementById('load-scene').addEventListener('click', sceneDialog.submit = () => {
   if (select.selectedIndex === 0) {
     reader.onload = function () {
-      Deserializer.deserialize(reader.result)
-      sceneDialog.close()
+      Deserializer.deserialize(reader.result, (err) => {
+        if (err) {
+          sceneDialog.showError(err)
+        } else {
+          sceneDialog.close()
+          sceneDialog.hideError()
+        }
+      })
     }
     reader.readAsText(file.files[0])
   } else {
     Deserializer.selectScene(scenes[select.selectedIndex - 1])
     sceneDialog.close()
+    sceneDialog.hideError()
   }
 })

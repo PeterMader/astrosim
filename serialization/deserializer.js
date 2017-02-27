@@ -5,11 +5,11 @@ const ui = require('../ui/ui.js')
 
 module.exports = class Deserializer {
 
-  static selectScene (data) {
+  static selectScene (data, cb) {
     if (Deserializer.validateData(data)) {
       content.objects = []
       content.histories = []
-      content.currentId = 0
+      content.currentId = content.realTime = content.simulatedTime = content.ticks = content.pendingTicks = 0
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
 
@@ -23,23 +23,27 @@ module.exports = class Deserializer {
       })
 
       animation.shouldRender = true
-      ui.update()
       ui.pause()
+      if (typeof cb === 'function') {
+        cb()
+      }
     } else {
-      console.log('Error: Invalid scene.')
+      if (typeof cb === 'function') {
+        cb('Error: Invalid scene.')
+      }
     }
   }
 
-  static deserialize (string) {
+  static deserialize (string, cb) {
     let data
     try {
       data = JSON.parse(string)
     } catch (e) {
-      console.log('Error parsing the selected file: ', e)
+      cb(`Error parsing the selected file: ${e.getMessage()}`)
       return
     }
 
-    Deserializer.selectScene(data)
+    Deserializer.selectScene(data, cb)
   }
 
   static validateData (data) {

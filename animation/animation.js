@@ -21,16 +21,14 @@ const animation = module.exports = ASTRO.animation = {
 
   shouldRender: true,
   drawHistory: true,
+  drawControls: true,
+  drawLabels: false,
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
       animation.render()
       animation.shouldRender = false
-
-      if (animation.frames % 50 === 0) {
-        ui.updateHistoryValues()
-      }
     }
     animation.frames += 1
   }),
@@ -45,7 +43,9 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
-    this.ctx = canvas.getContext('2d')
+    this.ctx = canvas.getContext('2d', {
+      alpha: false // since the alpha channel is not used, this will speed up drawing
+    })
     this.adjust()
     ui = require('../ui/ui.js')
 

@@ -66,7 +66,7 @@ module.exports = class Body {
     let index
     for (index in objects) {
       const body = objects[index]
-      if (body === this) {
+      if (body === this || body.id === this.id) {
         continue
       }
       this.interact(body, objects, index, deltaTime)

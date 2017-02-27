@@ -11,8 +11,12 @@ const content = module.exports = ASTRO.content = {
   METERS_PER_PIXEL: 3e8,
   GRAVITY_CONSTANT: 6.67408e-11,
 
+  toBeDeleted: [], // holds indices of all the objects that will be deleted after the current tick
+  toBeAdded: [], // holds the objects that will be added after the current tick
+
   ticks: 0,
   realTime: 0,
+  simulatedTime: 0,
   pendingTicks: 0,
   TICKS_PER_FRAME: 10,
 
@@ -56,28 +60,37 @@ const content = module.exports = ASTRO.content = {
         histories[id][index] = history
       }
     }
-
-    window.hist = histories
   },
 
   // save the data of two objects
   save (idA, idB, force, distance) {
-    this.histories[idA][idB].force.add(force)
-    this.histories[idA][idB].distance.add(distance)
+    if (this.histories[idA] && this.histories[idA][idB]) {
+      this.histories[idA][idB].force.add(force)
+      this.histories[idA][idB].distance.add(distance)
+    }
   },
 
   // removes an object from the object list
-  remove (item) {
-    const {objects, histories} = this
-    objects.splice(object.id, 1)
+  remove (object) {
+    this.objects.splice(object.id, 1)
+    this.toBeDeleted.push(object.id)
+  },
 
-    let index
-    for (index in histories) {
-      if (index !== object.id) {
-        histories[index].splice(object.id, 1)
+  commitRemove () {
+    const {histories, toBeDeleted} = this
+    let deletionIndex
+    for (deletionIndex in toBeDeleted) {
+      const objectIndex = toBeDeleted[deletionIndex]
+
+      let index
+      for (index in histories) {
+        if (index !== objectIndex) {
+          histories[index].splice(objectIndex, 1)
+        }
       }
+      histories.splice(objectIndex, 1)
     }
-    histories.splice(object.id, 1)
+    this.toBeDeleted = []
   },
 
   // calls the 'update' method of all the objects
@@ -88,7 +101,8 @@ const content = module.exports = ASTRO.content = {
     this.pendingTicks += this.TICKS_PER_FRAME
     const {objects} = this
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
-    this.realTime += deltaSecs
+    this.realTime += deltaTime / 1000
+    this.simulatedTime += deltaSecs
     let index
     while (this.pendingTicks > 0) {
       this.ticks += 1
@@ -100,6 +114,12 @@ const content = module.exports = ASTRO.content = {
         if (this.ticks % animation.traceFrequency === 0) {
           objects[index].savePosition()
         }
+      }
+      if (this.toBeDeleted.length > 0) {
+        this.commitRemove()
+      }
+      if (this.toBeAdded.length > 0) {
+        this.commitAdd()
       }
       this.pendingTicks -= 1
     }
