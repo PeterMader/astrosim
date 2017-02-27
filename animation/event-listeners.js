@@ -11,8 +11,8 @@ module.exports = function () {
       return
     }
 
-    camera.rotateY((startX - e.clientX) * .0004)
-    camera.rotateX((startY - e.clientY) * .0004)
+    camera.rotateY((startX - e.clientX) * .001)
+    camera.rotateX((startY - e.clientY) * -.001)
 
     document.body.position = 'absolute'
   }
@@ -46,20 +46,21 @@ module.exports = function () {
   })
 
   const {keyboard} = ui
+  const speed = 1
   keyboard.on('w', () => {
-    camera.moveForward(.2)
+    camera.moveForward(speed)
   })
 
   keyboard.on('s', () => {
-    camera.moveForward(-.2)
+    camera.moveForward(-speed)
   })
 
   keyboard.on('a', () => {
-    camera.moveLeft(-.2)
+    camera.moveLeft(-speed)
   })
 
   keyboard.on('d', () => {
-    camera.moveLeft(.2)
+    camera.moveLeft(speed)
   })
 
   keyboard.on('Enter', () => {
@@ -67,34 +68,26 @@ module.exports = function () {
   })
 
   keyboard.on('PageUp', () => {
-    camera.position[1] += .01
+    camera.position[1] += speed
   })
 
   keyboard.on('PageDown', () => {
-    camera.position[1] -= .01
-  })
-
-  keyboard.on(' ', () => {
-    camera.position[1] = 2
+    camera.position[1] -= speed
   })
 
   keyboard.on('ArrowUp', () => {
-    if (camera.rotationX > -math.degToRad(20)) {
-      camera.rotationX -= .1
-    }
+    camera.rotationX -= .05
   })
 
   keyboard.on('ArrowDown', () => {
-    if (camera.rotationX < math.degToRad(20)) {
-      camera.rotationX += .1
-    }
+    camera.rotationX += .05
   })
 
   keyboard.on('ArrowLeft', () => {
-    camera.rotateY(-.005)
+    camera.rotateY(-.05)
   })
 
   keyboard.on('ArrowRight', () => {
-    camera.rotateY(.005)
+    camera.rotateY(.05)
   })
 }

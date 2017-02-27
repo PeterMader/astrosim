@@ -1,3 +1,5 @@
+const Vec3 = require('./vec3.js')
+
 module.exports = class Mat4 {
 
   static create () {
@@ -220,72 +222,18 @@ module.exports = class Mat4 {
     return out
   }
 
-  static lookAt (eye, center, upwards, result) {
-    let x0, x1, x2, y0, y1, y2, z0, z1, z2
-
-    z0 = eye[0] - center[0]
-    z1 = eye[1] - center[1]
-    z2 = eye[2] - center[2]
-
-    let len = 1 / Math.sqrt(z0 * z0 + z1 * z1 + z2 * z2)
-    if (len) {
-      z0 *= len
-      z1 *= len
-      z2 *= len
-    }
-
-    x0 = upwards[1] * z2 - upwards[2] * z1
-    x1 = upwards[2] * z0 - upwards[0] * z2
-    x2 = upwards[0] * z1 - upwards[1] * z0
-
-    len = Math.sqrt(x0 * x0 + x1 * x1 + x2 * x2)
-    if (!len) {
-        x0 = 0
-        x1 = 0
-        x2 = 0
-    } else {
-        len = 1 / len
-        x0 *= len
-        x1 *= len
-        x2 *= len
-    }
-
-    y0 = z1 * x2 - z2 * x1
-    y1 = z2 * x0 - z0 * x2
-    y2 = z0 * x1 - z1 * x0
-
-    len = Math.sqrt(y0 * y0 + y1 * y1 + y2 * y2)
-    if (!len) {
-        y0 = 0
-        y1 = 0
-        y2 = 0
-    } else {
-        len = 1 / len
-        y0 *= len
-        y1 *= len
-        y2 *= len
-    }
-
+  static multiplyWithVector (mat, vec, result) {
     let out = result
     if (!out) {
-      out = Mat4.create()
+      out = Vec3.create()
     }
-    out[0] = x0
-    out[1] = y0
-    out[2] = z0
-    out[3] = 0
-    out[4] = x1
-    out[5] = y1
-    out[6] = z1
-    out[7] = 0
-    out[8] = x2
-    out[9] = y2
-    out[10] = z2
-    out[11] = 0
-    out[12] = -(x0 * eye[0] + x1 * eye[1] + x2 * eye[2])
-    out[13] = -(y0 * eye[0] + y1 * eye[1] + y2 * eye[2])
-    out[14] = -(z0 * eye[0] + z1 * eye[1] + z2 * eye[2])
-    out[15] = 1
+
+    const [x, y, z] = vec // w = 1
+
+    out[0] = x * mat[0] + y * mat[1] + z * mat[2] + mat[3]
+    out[1] = x * mat[4] + y * mat[5] + z * mat[6] + mat[7]
+    out[2] = x * mat[8] + y * mat[9] + z * mat[10] + mat[11]
+    out[3] = x * mat[12] + y * mat[13] + z * mat[14] + mat[15]
 
     return out
   }

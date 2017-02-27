@@ -14,7 +14,7 @@ module.exports = class Body {
     this.color = new Color()
     this.name = name
 
-    this.model = new Sphere(radius)
+    this.model = new Sphere()
 
     // remember the last 100 positions
     this.history = new Float32Array(300)

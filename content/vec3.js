@@ -82,4 +82,46 @@ module.exports = class Vec3 {
     return out
   }
 
+  static rotateX (a, angle, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    const [x, y, z] = a
+    const sin = Math.sin(angle)
+    const cos = Math.cos(angle)
+    out[0] = x
+    out[1] = y * cos - z * sin
+    out[2] = y * sin + z * cos
+    return out
+  }
+
+  static rotateY (a, angle, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    const [x, y, z] = a
+    const sin = Math.sin(angle)
+    const cos = Math.cos(angle)
+    out[0] = x * cos + z * sin
+    out[1] = y
+    out[2] = z * cos - x * sin
+    return out
+  }
+
+  static rotateZ (a, angle, result) {
+    let out = result
+    if (!out) {
+      out = Vec3.create()
+    }
+    const [x, y, z] = a
+    const sin = Math.sin(angle)
+    const cos = Math.cos(angle)
+    out[0] = x * cos - y * sin
+    out[1] = x * sin + y * cos
+    out[2] = z
+    return out
+  }
+
 }

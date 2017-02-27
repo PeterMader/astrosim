@@ -46,9 +46,9 @@ for (latitude = 0; latitude < MAX_LATITUDE; latitude += 1) {
 
 module.exports = class Sphere extends Model {
 
-  constructor (radius) {
+  constructor () {
     super()
-    this.setVertices(vertices.map((n) => n * radius), vertices.length / 3)
+    this.setVertices(vertices, vertices.length / 3)
     this.setIndices(indices, indices.length)
   }
 

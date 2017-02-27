@@ -56,7 +56,7 @@ const content = module.exports = ASTRO.content = {
         objects[index].update(deltaSecs)
       }
       for (index in objects) {
-        objects[index].move(deltaSecs)
+        // objects[index].move(deltaSecs)
         if (this.ticks % animation.traceFrequency === 0) {
           objects[index].savePosition()
         }
