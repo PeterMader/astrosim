@@ -12,17 +12,17 @@ const content = module.exports = ASTRO.content = {
   GRAVITY_CONSTANT: 6.67408e-11,
 
   toBeDeleted: [], // holds indices of all the objects that will be deleted after the current tick
-  toBeAdded: [], // holds the objects that will be added after the current tick
 
-  ticks: 0,
-  realTime: 0,
-  simulatedTime: 0,
-  pendingTicks: 0,
-  TICKS_PER_FRAME: 10,
+  ticks: 0,  // how many computations were performed
+  realTime: 0,  // how much time passed in the real world since the simulation was started with the current scene
+  simulatedTime: 0, // how much time passed in the simulation since the simulation was started with the current scene
+  pendingTicks: 0, // how many computations have to be performed in th next frame
+  TICKS_PER_FRAME: 10, // how many computations should be performed in one frame
 
   SECONDS_IN_YEAR: 31556927, // a year has 31,556,927
   TIME_FACTOR: 1, // the factor the time passed is multiplied by
 
+  // temporary vectors, so that no new memory must be allocated
   temp1: Vec2.create(),
   temp2: Vec2.create(),
   temp3: Vec2.create(),
@@ -94,15 +94,22 @@ const content = module.exports = ASTRO.content = {
   },
 
   // calls the 'update' method of all the objects
-  update (deltaTime) {
+  update (realDeltaTime) {
+    const {objects} = this
+
+    // calculate how many computations are necessary
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
     }
     this.pendingTicks += this.TICKS_PER_FRAME
-    const {objects} = this
+
+    // calculate how much time passed since the last frame
+    const deltaTime = realDeltaTime < 1000 ? realDeltaTime : 1000
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaTime / 1000
     this.simulatedTime += deltaSecs
+
+    // perform the necessary amount of computations
     let index
     while (this.pendingTicks > 0) {
       this.ticks += 1
@@ -117,9 +124,6 @@ const content = module.exports = ASTRO.content = {
       }
       if (this.toBeDeleted.length > 0) {
         this.commitRemove()
-      }
-      if (this.toBeAdded.length > 0) {
-        this.commitAdd()
       }
       this.pendingTicks -= 1
     }
