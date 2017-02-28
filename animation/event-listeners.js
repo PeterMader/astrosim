@@ -23,7 +23,7 @@ module.exports = function () {
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
-    const factor = e.deltaY > 0 ? -10 : 10
+    const factor = e.deltaY > 0 ? 10 : -10
     camera.moveForward(factor)
   })
 
@@ -56,11 +56,11 @@ module.exports = function () {
   })
 
   keyboard.on('a', () => {
-    camera.moveLeft(-speed)
+    camera.moveLeft(speed)
   })
 
   keyboard.on('d', () => {
-    camera.moveLeft(speed)
+    camera.moveLeft(-speed)
   })
 
   keyboard.on('Enter', () => {
