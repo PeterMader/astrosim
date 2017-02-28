@@ -58,7 +58,9 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
         }
       })
     }
-    reader.readAsText(file.files[0])
+    if (file.files[0]) {
+      reader.readAsText(file.files[0])
+    }
   } else {
     Deserializer.selectScene(scenes[select.selectedIndex - 1])
     sceneDialog.close()

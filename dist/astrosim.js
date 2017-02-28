@@ -6,8 +6,8 @@ const Vec2 = require('../content/vec2.js')
 let ui
 
 const animation = module.exports = ASTRO.animation = {
-  MIN_SCALING: 2e-5,
-  MAX_SCALING: 2e5,
+  MIN_SCALING: 2e-10,
+  MAX_SCALING: 2e10,
 
   translation: Vec2.create(0, 0),
   ratio: 1,
@@ -24,6 +24,11 @@ const animation = module.exports = ASTRO.animation = {
   drawHistory: true,
   drawControls: true,
   drawLabels: false,
+
+  dragging: false,
+  draggingPosition: Vec2.create(),
+  draggingRadius: 1,
+  draggingColor: '#FFFFFF',
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
@@ -44,7 +49,9 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
-    this.ctx = canvas.getContext('2d')
+    this.ctx = canvas.getContext('2d', {
+      alpha: false // since the alpha channel is not used, this will speed up drawing
+    })
     this.adjust()
     ui = require('../ui/ui.js')
 
@@ -62,7 +69,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":11,"../ui/ui.js":29,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec2.js":12,"../ui/ui.js":31,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -129,19 +136,10 @@ module.exports = class Color {
 const animation = require('./animation.js')
 const {mainLoop} = require('../astrosim.js')
 const dialogManager = require('../ui/dialogs/dialog-manager.js')
+const ui = require('../ui/ui.js')
 
 module.exports = function () {
   const {canvas} = this
-
-  const translate = (e) => {
-    if (!mouseHeld) {
-      return
-    }
-
-    animation.translate(startX - e.clientX, startY - e.clientY)
-
-    document.body.position = 'absolute'
-  }
 
   window.addEventListener('resize', () => {
     animation.adjust()
@@ -165,36 +163,80 @@ module.exports = function () {
     document.body.position = 'fixed'
   })
   canvas.addEventListener('mousemove', (e) => {
-    translate(e)
+    if (animation.dragging) {
+      if (e.clientX > canvas.width * .95) {
+        animation.translate(1, 0)
+      } else if (e.clientX < canvas.width * .05) {
+        animation.translate(-1, 0)
+      } else if (e.clientY > canvas.height * .95) {
+        animation.translate(0, 1)
+      } else if (e.clientY < canvas.height * .05) {
+        animation.translate(0, -1)
+      }
+      animation.draggingPosition[0] = e.clientX
+      animation.draggingPosition[1] = e.clientY
+      animation.shouldRender = true
+      return
+    }
+
+    if (!mouseHeld) {
+      return
+    }
+
+    animation.translate(startX - e.clientX, startY - e.clientY)
+    document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
   })
-  canvas.addEventListener('mouseup', translate)
+
+  canvas.addEventListener('mouseup', (e) => {
+    if (animation.dragging && dialogManager.openDialog) {
+      dialogManager.openDialog.emit('drag-end')
+    }
+  })
+
   document.body.addEventListener('mouseup', () => {
     mouseHeld = false
   })
-  document.addEventListener('keyup', (e) => {
+
+  ui.keyboard.on('keyup', (e) => {
     if (!dialogManager.openDialog) {
       // canvas is visible
       const translation = e.shiftKey ? 10 : 100
       if (e.key === 'ArrowUp') {
-        animation.translate(0, -translation)
-      } else if (e.key === 'ArrowDown') {
         animation.translate(0, translation)
+      } else if (e.key === 'ArrowDown') {
+        animation.translate(0, -translation)
       } else if (e.key === 'ArrowLeft') {
-        animation.translate(-translation, 0)
-      } else if (e.key === 'ArrowRight') {
         animation.translate(translation, 0)
+      } else if (e.key === 'ArrowRight') {
+        animation.translate(-translation, 0)
       } else if (e.key === '+' || e.key === '*') {
         animation.scale(e.shiftKey ? 1.05 : 2, 0, 0)
       } else if (e.key === '-' || e.key === '_') {
         animation.scale(e.shiftKey ? .95 : .5, 0, 0)
+      } else if (e.key === 't') {
+        animation.drawHistory = !animation.drawHistory
+        animation.shouldRender = true
+      } else if (e.key === 'c') {
+        animation.drawControls = !animation.drawControls
+        animation.shouldRender = true
+      } else if (e.key === 'l') {
+        animation.drawLabels = !animation.drawLabels
+        animation.shouldRender = true
       }
+    }
+  })
+
+  ui.keyboard.on('x', (e) => {
+    if (animation.dragging && ui.dialogs.openDialog) {
+      animation.dragging = false
+      ui.dialogs.openDialog.show()
     }
   })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":22,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":23,"../ui/ui.js":31,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -353,6 +395,7 @@ animation.render = function () {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
         } else {
+          // start at start
           ctx.moveTo(history[0] * factor + offsetX, history[1] * factor + offsetY)
           for (i = 2; i < object.historyIndex; i += 2) {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
@@ -364,12 +407,31 @@ animation.render = function () {
     }
   }
 
+  if (animation.dragging) {
+    if (animation.draggingCenter) {
+      const [x, y] = animation.draggingPosition
+      ctx.strokeStyle = animation.draggingColor
+      ctx.beginPath()
+      ctx.moveTo(x, y - 10)
+      ctx.lineTo(x, y + 10)
+      ctx.moveTo(x - 10, y)
+      ctx.lineTo(x + 10, y)
+      ctx.stroke()
+    } else {
+      // draw the circle as if the object was there
+      const pos = animation.draggingPosition
+      const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
+      const color = animation.draggingColor
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+    }
+  }
+
   if (animation.drawControls) {
     this.renderControls()
   }
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":11,"../ui/ui.js":29,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":12,"../ui/ui.js":31,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
 const Vec2 = require('../content/vec2.js')
 
@@ -414,7 +476,7 @@ animation.scale = function (factor, centerX, centerY) {
   animation.shouldRender = true
 }
 
-},{"../content/vec2.js":11,"./animation.js":1}],7:[function(require,module,exports){
+},{"../content/vec2.js":12,"./animation.js":1}],7:[function(require,module,exports){
 const Loop = require('./animation/loop.js')
 
 const ASTRO = module.exports = {
@@ -436,7 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":29}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":31}],8:[function(require,module,exports){
 const Color = require('../animation/color.js')
 const content = require('./content.js')
 const Vec2 = require('./vec2.js')
@@ -575,7 +637,7 @@ module.exports = class Body {
   }
 }
 
-},{"../animation/color.js":2,"./content.js":9,"./vec2.js":11}],9:[function(require,module,exports){
+},{"../animation/color.js":2,"./content.js":9,"./vec2.js":12}],9:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
 const History = require('./history.js')
@@ -590,17 +652,17 @@ const content = module.exports = ASTRO.content = {
   GRAVITY_CONSTANT: 6.67408e-11,
 
   toBeDeleted: [], // holds indices of all the objects that will be deleted after the current tick
-  toBeAdded: [], // holds the objects that will be added after the current tick
 
-  ticks: 0,
-  realTime: 0,
-  simulatedTime: 0,
-  pendingTicks: 0,
-  TICKS_PER_FRAME: 10,
+  ticks: 0,  // how many computations were performed
+  realTime: 0,  // how much time passed in the real world since the simulation was started with the current scene
+  simulatedTime: 0, // how much time passed in the simulation since the simulation was started with the current scene
+  pendingTicks: 0, // how many computations have to be performed in th next frame
+  TICKS_PER_FRAME: 10, // how many computations should be performed in one frame
 
   SECONDS_IN_YEAR: 31556927, // a year has 31,556,927
   TIME_FACTOR: 1, // the factor the time passed is multiplied by
 
+  // temporary vectors, so that no new memory must be allocated
   temp1: Vec2.create(),
   temp2: Vec2.create(),
   temp3: Vec2.create(),
@@ -672,15 +734,22 @@ const content = module.exports = ASTRO.content = {
   },
 
   // calls the 'update' method of all the objects
-  update (deltaTime) {
+  update (realDeltaTime) {
+    const {objects} = this
+
+    // calculate how many computations are necessary
     if (this.pendingTicks > 100) {
       this.TICKS_PER_FRAME -= 1
     }
     this.pendingTicks += this.TICKS_PER_FRAME
-    const {objects} = this
+
+    // calculate how much time passed since the last frame
+    const deltaTime = realDeltaTime < 1000 ? realDeltaTime : 1000
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaTime / 1000
     this.simulatedTime += deltaSecs
+
+    // perform the necessary amount of computations
     let index
     while (this.pendingTicks > 0) {
       this.ticks += 1
@@ -695,9 +764,6 @@ const content = module.exports = ASTRO.content = {
       }
       if (this.toBeDeleted.length > 0) {
         this.commitRemove()
-      }
-      if (this.toBeAdded.length > 0) {
-        this.commitAdd()
       }
       this.pendingTicks -= 1
     }
@@ -716,7 +782,50 @@ const content = module.exports = ASTRO.content = {
   }
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"./history.js":10,"./vec2.js":11}],10:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"./history.js":11,"./vec2.js":12}],10:[function(require,module,exports){
+module.exports = class EventEmitter {
+
+  constructor () {
+    this._events = []
+  }
+
+  on (channel, callback) {
+    const events = this._events
+    if (Array.isArray(events[channel])) {
+      events[channel].push(callback)
+    } else {
+      events[channel] = [callback]
+    }
+    return this
+  }
+
+  once (channel, callback) {
+    const events = this._events
+    const func = function () {
+      callback.apply(self, Array.prototype.slice.call(arguments))
+      events[channel].splice([events[channel].indexOf(func)], 1)
+    }
+    if (Array.isArray(events[channel])) {
+      events[channel].push(func)
+    } else {
+      events[channel] = [func]
+    }
+    return this
+  }
+
+  emit (channel) {
+    const events = this._events
+    const args = Array.prototype.slice.call(arguments, 1)
+    if (Array.isArray(events[channel])) {
+      events[channel].forEach((cb) => {
+        cb.apply(self, args)
+      })
+    }
+  }
+
+}
+
+},{}],11:[function(require,module,exports){
 const History = module.exports = class {
 
   constructor () {
@@ -738,7 +847,7 @@ const History = module.exports = class {
 
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -853,7 +962,7 @@ module.exports = class Vec2 {
 
 }
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Earth and Moon",
@@ -892,7 +1001,7 @@ module.exports={
   }
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Empty Scene",
@@ -910,7 +1019,7 @@ module.exports={
   }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 module.exports=[ 
 require('./earth-moon.json'), 
 require('./empty.json'), 
@@ -919,7 +1028,7 @@ require('./sun-earth.json'),
 require('./trappist-1.json'), 
 ] 
 
-},{"./earth-moon.json":12,"./empty.json":13,"./solar-system.json":15,"./sun-earth.json":16,"./trappist-1.json":17}],15:[function(require,module,exports){
+},{"./earth-moon.json":13,"./empty.json":14,"./solar-system.json":16,"./sun-earth.json":17,"./trappist-1.json":18}],16:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Solar System",
@@ -1048,7 +1157,7 @@ module.exports={
   }
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "Sun and Earth",
@@ -1087,7 +1196,7 @@ module.exports={
   }
 }
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 module.exports={
   "meta": {
     "name": "TRAPPIST-1",
@@ -1186,7 +1295,7 @@ module.exports={
   }
 }
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -1254,7 +1363,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":29}],19:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":31}],20:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1297,7 +1406,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":29}],20:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":31}],21:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
@@ -1306,7 +1415,7 @@ document.getElementById('about-submit').addEventListener('click', () => {
   aboutDialog.close()
 })
 
-},{"./dialog.js":23}],21:[function(require,module,exports){
+},{"./dialog.js":24}],22:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const detailsDialog = module.exports = new Dialog(document.getElementById('details-dialog'))
@@ -1315,7 +1424,7 @@ document.getElementById('details-submit').addEventListener('click', () => {
   detailsDialog.close()
 })
 
-},{"./dialog.js":23}],22:[function(require,module,exports){
+},{"./dialog.js":24}],23:[function(require,module,exports){
 module.exports = {
 
   aboutDialog: null,
@@ -1337,13 +1446,15 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":20,"./details-dialog.js":21,"./new-object-dialog.js":24,"./object-dialog.js":25,"./scene-dialog.js":26,"./settings-dialog.js":27}],23:[function(require,module,exports){
+},{"./about-dialog.js":21,"./details-dialog.js":22,"./new-object-dialog.js":25,"./object-dialog.js":26,"./scene-dialog.js":27,"./settings-dialog.js":28}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
-const ui = require('../../ui/ui.js')
 const dialogManager = require('./dialog-manager.js')
+const EventEmitter = require('../../content/event-emitter.js')
+const ui = require('../../ui/ui.js')
 
-module.exports = class Dialog {
+module.exports = class Dialog extends EventEmitter {
   constructor (element) {
+    super()
     this.element = element
     element.classList.add('dialog-closed')
     element.classList.add('dialog')
@@ -1409,12 +1520,25 @@ module.exports = class Dialog {
     return true
   }
   open () {
+    if (dialogManager.openDialog) {
+      return
+    }
+
     this.element.classList.add('dialog-open')
     this.element.classList.remove('dialog-closed')
     this.opened = true
     dialogManager.openDialog = this
 
     animation.pause()
+    this.emit('open')
+  }
+  show () {
+    this.element.classList.add('dialog-open')
+    this.element.classList.remove('dialog-closed')
+  }
+  hide () {
+    this.element.classList.remove('dialog-open')
+    this.element.classList.add('dialog-closed')
   }
   close () {
     this.element.classList.remove('dialog-open')
@@ -1423,12 +1547,15 @@ module.exports = class Dialog {
 
     dialogManager.openDialog = null
 
+    this.emit('close')
+
     if (ui.isPlaying) {
       animation.unpause()
     }
   }
   submit () {
     if (this.validate()) {
+      this.emit('submit')
       this.close()
     }
   }
@@ -1438,7 +1565,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":29,"./dialog-manager.js":22}],24:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/event-emitter.js":10,"../../ui/ui.js":31,"./dialog-manager.js":23}],25:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
@@ -1463,6 +1590,37 @@ newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, 
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
+newObjectDialog.on('open', () => {
+  name.focus()
+})
+
+newObjectDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  animation.dragging = false
+  newObjectDialog.show()
+})
+
+document.getElementById('new-object-drag-position').addEventListener('click', () => {
+  const radiusNumber = Number(radius.value)
+  if (radiusNumber <= 0) {
+    radius.classList.add('dialog-input-invalid')
+    return
+  } else {
+    radius.classList.remove('dialog-input-invalid')
+  }
+  animation.dragging = true
+  animation.draggingRadius = radiusNumber
+  animation.draggingColor = color.value
+  newObjectDialog.hide()
+})
+
+document.getElementById('new-object-position-center').addEventListener('click', () => {
+  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+})
+
 document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))
@@ -1477,7 +1635,7 @@ document.getElementById('new-object-submit').addEventListener('click', newObject
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":11,"./dialog.js":23}],25:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":12,"./dialog.js":24}],26:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1500,6 +1658,37 @@ const color = document.getElementById('object-color')
 objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
 objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
+
+objectDialog.on('open', () => {
+  name.focus()
+})
+
+objectDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  animation.dragging = false
+  objectDialog.show()
+})
+
+document.getElementById('object-drag-position').addEventListener('click', () => {
+  const radiusNumber = Number(radius.value)
+  if (radiusNumber <= 0) {
+    radius.classList.add('dialog-input-invalid')
+    return
+  } else {
+    radius.classList.remove('dialog-input-invalid')
+  }
+  animation.dragging = true
+  animation.draggingRadius = radiusNumber
+  animation.draggingColor = color.value
+  objectDialog.hide()
+})
+
+document.getElementById('object-position-center').addEventListener('click', () => {
+  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+})
 
 objectDialog.setValues = () => {
   const object = content.editedObject
@@ -1536,7 +1725,7 @@ document.getElementById('object-submit').addEventListener('click', objectDialog.
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":29,"./dialog.js":23}],26:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":31,"./dialog.js":24}],27:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1597,7 +1786,9 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
         }
       })
     }
-    reader.readAsText(file.files[0])
+    if (file.files[0]) {
+      reader.readAsText(file.files[0])
+    }
   } else {
     Deserializer.selectScene(scenes[select.selectedIndex - 1])
     sceneDialog.close()
@@ -1605,7 +1796,7 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
   }
 })
 
-},{"../../scenes/list.js":14,"../../serialization/deserializer.js":18,"./dialog.js":23}],27:[function(require,module,exports){
+},{"../../scenes/list.js":15,"../../serialization/deserializer.js":19,"./dialog.js":24}],28:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1632,6 +1823,26 @@ drawLabels.checked = false
 settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFactor)
 settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
+
+settingsDialog.on('open', () => {
+  translationX.focus()
+})
+
+settingsDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  translationX.value = (animation.translation[0] + animation.draggingPosition[0] - animation.canvas.width / 2).toExponential(3)
+  translationY.value = (animation.translation[1] + animation.draggingPosition[1] - animation.canvas.height / 2).toExponential(3)
+  animation.dragging = false
+  animation.draggingCenter = false
+  settingsDialog.show()
+})
+
+document.getElementById('settings-drag-center').addEventListener('click', () => {
+  animation.dragging = true
+  animation.draggingColor = '#3477CC'
+  animation.draggingCenter = true
+  settingsDialog.hide()
+})
 
 // set the input values when the dialog is opened
 settingsDialog.setValues = () => {
@@ -1667,7 +1878,7 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":29,"./dialog.js":23}],28:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":31,"./dialog.js":24}],29:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1735,25 +1946,84 @@ module.exports = function () {
     sideBar.classList.add('side-bar-closed')
   })
 
-  document.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-      if (ui.dialogs.openDialog) {
-        ui.dialogs.openDialog.submit()
+  ui.keyboard.on('Enter', () => {
+    if (ui.dialogs.openDialog) {
+      ui.dialogs.openDialog.submit()
+    } else {
+      if (mainLoop.running) {
+        ui.pause()
       } else {
-        if (mainLoop.running) {
-          ui.pause()
-        } else {
-          ui.unpause()
-        }
+        ui.unpause()
       }
+    }
+  })
+
+  ui.keyboard.on('n', () => {
+    if (!ui.dialogs.openDialog) {
+      ui.dialogs.newObjectDialog.open()
+    }
+  })
+
+  ui.keyboard.on('s', () => {
+    if (!ui.dialogs.openDialog) {
+      ui.dialogs.sceneDialog.open()
+    }
+  })
+
+  ui.keyboard.on('p', () => {
+    if (!ui.dialogs.openDialog) {
+      ui.dialogs.settingsDialog.open()
+    }
+  })
+
+  ui.keyboard.on('x', () => {
+    if (ui.dialogs.openDialog && document.activeElement === document.body) {
+      ui.dialogs.openDialog.close()
+    }
+  })
+
+  ui.keyboard.on('m', () => {
+    if (!ui.dialogs.openDialog) {
+      animation.translation[0] = 0
+      animation.translation[1] = 0
+      animation.shouldRender = true
     }
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":19,"../ui/ui.js":29}],29:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":20,"../ui/ui.js":31}],30:[function(require,module,exports){
+const EventEmitter = require('../content/event-emitter.js')
+
+module.exports = class Keyboard extends EventEmitter {
+
+  constructor () {
+    super()
+
+    this.pressedKeys = {}
+
+    document.addEventListener('keydown', (e) => {
+      this.pressedKeys[e.key] = true
+      this.emit('keydown', e)
+    })
+
+    document.addEventListener('keyup', (e) => {
+      this.pressedKeys[e.key] = false
+      this.emit(e.key, e)
+      this.emit('keyup', e)
+    })
+  }
+
+  isKeyPressed (key) {
+    return !!this.pressedKeys[key]
+  }
+
+}
+
+},{"../content/event-emitter.js":10}],31:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 let content
+const Keyboard = require('./keyboard.js')
 const Body = require('../content/body.js')
 const animation = require('../animation/animation.js')
 
@@ -1764,6 +2034,7 @@ const ui = module.exports = ASTRO.ui = {
   isPlaying: true,
 
   dialogs: require('./dialogs/dialog-manager.js'),
+  keyboard: new Keyboard(),
 
   initialize () {
     this.list = document.getElementById('object-list')
@@ -1942,4 +2213,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":22,"./event-listeners.js":28}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":23,"./event-listeners.js":29,"./keyboard.js":30}]},{},[7]);

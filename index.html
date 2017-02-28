@@ -92,16 +92,21 @@
       <div id="settings-dialog">
         <h3>Settings</h3>
         <h5>Viewport settings</h5>
-        <button type="button" id="center-viewport">Center viewport</button>
         <div class="item">
-          Translation in x direction:
-          <input name="translation-x" value="0" id="settings-translation-x">m
-          <div class="description">The translation of the viewport in x direction in pixels. The value 0 means no translation, a positive value means translation to the right, a negative value means translation to the left.</div>
+          <button type="button" id="center-viewport">Center viewport</button>
         </div>
         <div class="item">
-          Translation in y direction:
-          <input name="translation-y" value="0" id="settings-translation-y">m
-          <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
+          <button type="button" id="settings-drag-center">Drag position</button>
+          <div>
+            Translation in x direction:
+            <input name="translation-x" value="0" id="settings-translation-x">m
+            <div class="description">The translation of the viewport in x direction in pixels. The value 0 means no translation, a positive value means translation to the right, a negative value means translation to the left.</div>
+          </div>
+          <div>
+            Translation in y direction:
+            <input name="translation-y" value="0" id="settings-translation-y">m
+            <div class="description">The translation of the viewport in y direction in pixels. The value 0 means no translation, a positive value means translation downwards, a negative value means translation upwards.</div>
+          </div>
         </div>
         <div class="item">
           Scaling factor:
@@ -140,14 +145,18 @@
           <div class="description">The name of the object.</div>
         </div>
         <div class="item">
-          Position in x direction:
-          <input name="position-x" value="0" id="object-position-x">m
-          <div class="description">The position of the object in x direction.</div>
-        </div>
-        <div class="item">
-          Position in y direction:
-          <input name="position-y" value="0" id="object-position-y">m
-          <div class="description">The position of the object in y direction.</div>
+          <button type="button" id="object-drag-position">Drag position</button>
+          <button type="button" id="object-position-center">Current center</button>
+          <div>
+            Position in x direction:
+            <input name="position-x" value="0" id="object-position-x">m
+            <div class="description">The position of the object in x direction.</div>
+          </div>
+          <div>
+            Position in y direction:
+            <input name="position-y" value="0" id="object-position-y">m
+            <div class="description">The position of the object in y direction.</div>
+          </div>
         </div>
         <div class="item">
           Velocity in x direction:
@@ -189,14 +198,18 @@
           <div class="description">The name of the object.</div>
         </div>
         <div class="item">
-          Position in x direction:
-          <input name="position-x" value="0" id="new-object-position-x">m
-          <div class="description">The position of the object in x direction.</div>
-        </div>
-        <div class="item">
-          Position in y direction:
-          <input name="position-y" value="0" id="new-object-position-y">m
-          <div class="description">The position of the object in y direction.</div>
+          <button type="button" id="new-object-drag-position">Drag position</button>
+          <button type="button" id="new-object-position-center">Current center</button>
+          <div>
+            Position in x direction:
+            <input name="position-x" value="0" id="new-object-position-x">m
+            <div class="description">The position of the object in x direction.</div>
+          </div>
+          <div>
+            Position in y direction:
+            <input name="position-y" value="0" id="new-object-position-y">m
+            <div class="description">The position of the object in y direction.</div>
+          </div>
         </div>
         <div class="item">
           Velocity in x direction:

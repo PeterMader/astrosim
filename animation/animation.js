@@ -5,8 +5,8 @@ const Vec2 = require('../content/vec2.js')
 let ui
 
 const animation = module.exports = ASTRO.animation = {
-  MIN_SCALING: 2e-5,
-  MAX_SCALING: 2e5,
+  MIN_SCALING: 2e-10,
+  MAX_SCALING: 2e10,
 
   translation: Vec2.create(0, 0),
   ratio: 1,
@@ -23,6 +23,11 @@ const animation = module.exports = ASTRO.animation = {
   drawHistory: true,
   drawControls: true,
   drawLabels: false,
+
+  dragging: false,
+  draggingPosition: Vec2.create(),
+  draggingRadius: 1,
+  draggingColor: '#FFFFFF',
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {

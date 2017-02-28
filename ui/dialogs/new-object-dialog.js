@@ -22,6 +22,37 @@ newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, 
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
+newObjectDialog.on('open', () => {
+  name.focus()
+})
+
+newObjectDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  animation.dragging = false
+  newObjectDialog.show()
+})
+
+document.getElementById('new-object-drag-position').addEventListener('click', () => {
+  const radiusNumber = Number(radius.value)
+  if (radiusNumber <= 0) {
+    radius.classList.add('dialog-input-invalid')
+    return
+  } else {
+    radius.classList.remove('dialog-input-invalid')
+  }
+  animation.dragging = true
+  animation.draggingRadius = radiusNumber
+  animation.draggingColor = color.value
+  newObjectDialog.hide()
+})
+
+document.getElementById('new-object-position-center').addEventListener('click', () => {
+  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+})
+
 document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))

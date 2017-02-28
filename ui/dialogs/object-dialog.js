@@ -21,6 +21,37 @@ objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mas
 objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
+objectDialog.on('open', () => {
+  name.focus()
+})
+
+objectDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  animation.dragging = false
+  objectDialog.show()
+})
+
+document.getElementById('object-drag-position').addEventListener('click', () => {
+  const radiusNumber = Number(radius.value)
+  if (radiusNumber <= 0) {
+    radius.classList.add('dialog-input-invalid')
+    return
+  } else {
+    radius.classList.remove('dialog-input-invalid')
+  }
+  animation.dragging = true
+  animation.draggingRadius = radiusNumber
+  animation.draggingColor = color.value
+  objectDialog.hide()
+})
+
+document.getElementById('object-position-center').addEventListener('click', () => {
+  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+})
+
 objectDialog.setValues = () => {
   const object = content.editedObject
   color.value = object.color.hexString()

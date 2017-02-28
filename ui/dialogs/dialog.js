@@ -1,9 +1,11 @@
 const animation = require('../../animation/animation.js')
-const ui = require('../../ui/ui.js')
 const dialogManager = require('./dialog-manager.js')
+const EventEmitter = require('../../content/event-emitter.js')
+const ui = require('../../ui/ui.js')
 
-module.exports = class Dialog {
+module.exports = class Dialog extends EventEmitter {
   constructor (element) {
+    super()
     this.element = element
     element.classList.add('dialog-closed')
     element.classList.add('dialog')
@@ -69,12 +71,25 @@ module.exports = class Dialog {
     return true
   }
   open () {
+    if (dialogManager.openDialog) {
+      return
+    }
+
     this.element.classList.add('dialog-open')
     this.element.classList.remove('dialog-closed')
     this.opened = true
     dialogManager.openDialog = this
 
     animation.pause()
+    this.emit('open')
+  }
+  show () {
+    this.element.classList.add('dialog-open')
+    this.element.classList.remove('dialog-closed')
+  }
+  hide () {
+    this.element.classList.remove('dialog-open')
+    this.element.classList.add('dialog-closed')
   }
   close () {
     this.element.classList.remove('dialog-open')
@@ -83,12 +98,15 @@ module.exports = class Dialog {
 
     dialogManager.openDialog = null
 
+    this.emit('close')
+
     if (ui.isPlaying) {
       animation.unpause()
     }
   }
   submit () {
     if (this.validate()) {
+      this.emit('submit')
       this.close()
     }
   }
