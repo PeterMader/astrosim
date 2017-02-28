@@ -21,6 +21,10 @@ objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mas
 objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
+objectDialog.on('open', () => {
+  name.focus()
+})
+
 objectDialog.setValues = () => {
   const object = content.editedObject
   color.value = object.color.hexString()

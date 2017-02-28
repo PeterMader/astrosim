@@ -25,6 +25,10 @@ settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFact
 settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
+settingsDialog.on('open', () => {
+  translationX.focus()
+})
+
 // set the input values when the dialog is opened
 settingsDialog.setValues = () => {
   drawHistory.checked = animation.drawHistory

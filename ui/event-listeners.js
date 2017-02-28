@@ -65,17 +65,47 @@ module.exports = function () {
     sideBar.classList.add('side-bar-closed')
   })
 
-  document.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-      if (ui.dialogs.openDialog) {
-        ui.dialogs.openDialog.submit()
+  ui.keyboard.on('Enter', () => {
+    if (ui.dialogs.openDialog) {
+      ui.dialogs.openDialog.submit()
+    } else {
+      if (mainLoop.running) {
+        ui.pause()
       } else {
-        if (mainLoop.running) {
-          ui.pause()
-        } else {
-          ui.unpause()
-        }
+        ui.unpause()
       }
+    }
+  })
+
+  ui.keyboard.on('n', () => {
+    if (!ui.dialogs.openDialog) {
+      ui.dialogs.newObjectDialog.open()
+    }
+  })
+
+  ui.keyboard.on('s', () => {
+    if (!ui.dialogs.openDialog) {
+      ui.dialogs.sceneDialog.open()
+    }
+  })
+
+  ui.keyboard.on('p', () => {
+    if (!ui.dialogs.openDialog) {
+      ui.dialogs.settingsDialog.open()
+    }
+  })
+
+  ui.keyboard.on('x', () => {
+    if (ui.dialogs.openDialog && document.activeElement === document.body) {
+      ui.dialogs.openDialog.close()
+    }
+  })
+
+  ui.keyboard.on('m', () => {
+    if (!ui.dialogs.openDialog) {
+      animation.translation[0] = 0
+      animation.translation[1] = 0
+      animation.shouldRender = true
     }
   })
 }

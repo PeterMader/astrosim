@@ -5,8 +5,8 @@ const Vec2 = require('../content/vec2.js')
 let ui
 
 const animation = module.exports = ASTRO.animation = {
-  MIN_SCALING: 2e-5,
-  MAX_SCALING: 2e5,
+  MIN_SCALING: 2e-10,
+  MAX_SCALING: 2e10,
 
   translation: Vec2.create(0, 0),
   ratio: 1,

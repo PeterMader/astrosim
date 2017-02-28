@@ -22,6 +22,10 @@ newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, 
 newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
 newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
+newObjectDialog.on('open', () => {
+  name.focus()
+})
+
 document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))
