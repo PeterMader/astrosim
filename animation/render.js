@@ -100,6 +100,7 @@ animation.render = function () {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
         } else {
+          // start at start
           ctx.moveTo(history[0] * factor + offsetX, history[1] * factor + offsetY)
           for (i = 2; i < object.historyIndex; i += 2) {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
@@ -108,6 +109,25 @@ animation.render = function () {
         ctx.lineTo(pos[0], pos[1])
         ctx.stroke()
       }
+    }
+  }
+
+  if (animation.dragging) {
+    if (animation.draggingCenter) {
+      const [x, y] = animation.draggingPosition
+      ctx.strokeStyle = animation.draggingColor
+      ctx.beginPath()
+      ctx.moveTo(x, y - 10)
+      ctx.lineTo(x, y + 10)
+      ctx.moveTo(x - 10, y)
+      ctx.lineTo(x + 10, y)
+      ctx.stroke()
+    } else {
+      // draw the circle as if the object was there
+      const pos = animation.draggingPosition
+      const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
+      const color = animation.draggingColor
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
     }
   }
 

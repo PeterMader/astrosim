@@ -25,6 +25,11 @@ const animation = module.exports = ASTRO.animation = {
   drawControls: true,
   drawLabels: false,
 
+  dragging: false,
+  draggingPosition: Vec2.create(),
+  draggingRadius: 1,
+  draggingColor: '#FFFFFF',
+
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects
@@ -136,16 +141,6 @@ const ui = require('../ui/ui.js')
 module.exports = function () {
   const {canvas} = this
 
-  const translate = (e) => {
-    if (!mouseHeld) {
-      return
-    }
-
-    animation.translate(startX - e.clientX, startY - e.clientY)
-
-    document.body.position = 'absolute'
-  }
-
   window.addEventListener('resize', () => {
     animation.adjust()
   })
@@ -168,11 +163,38 @@ module.exports = function () {
     document.body.position = 'fixed'
   })
   canvas.addEventListener('mousemove', (e) => {
-    translate(e)
+    if (animation.dragging) {
+      if (e.clientX > canvas.width * .95) {
+        animation.translate(1, 0)
+      } else if (e.clientX < canvas.width * .05) {
+        animation.translate(-1, 0)
+      } else if (e.clientY > canvas.height * .95) {
+        animation.translate(0, 1)
+      } else if (e.clientY < canvas.height * .05) {
+        animation.translate(0, -1)
+      }
+      animation.draggingPosition[0] = e.clientX
+      animation.draggingPosition[1] = e.clientY
+      animation.shouldRender = true
+      return
+    }
+
+    if (!mouseHeld) {
+      return
+    }
+
+    animation.translate(startX - e.clientX, startY - e.clientY)
+    document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
   })
-  canvas.addEventListener('mouseup', translate)
+
+  canvas.addEventListener('mouseup', (e) => {
+    if (animation.dragging && dialogManager.openDialog) {
+      dialogManager.openDialog.emit('drag-end')
+    }
+  })
+
   document.body.addEventListener('mouseup', () => {
     mouseHeld = false
   })
@@ -203,6 +225,13 @@ module.exports = function () {
         animation.drawLabels = !animation.drawLabels
         animation.shouldRender = true
       }
+    }
+  })
+
+  ui.keyboard.on('x', (e) => {
+    if (animation.dragging && ui.dialogs.openDialog) {
+      animation.dragging = false
+      ui.dialogs.openDialog.show()
     }
   })
 }
@@ -366,6 +395,7 @@ animation.render = function () {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
           }
         } else {
+          // start at start
           ctx.moveTo(history[0] * factor + offsetX, history[1] * factor + offsetY)
           for (i = 2; i < object.historyIndex; i += 2) {
             ctx.lineTo(history[i] * factor + offsetX, history[i + 1] * factor + offsetY)
@@ -374,6 +404,25 @@ animation.render = function () {
         ctx.lineTo(pos[0], pos[1])
         ctx.stroke()
       }
+    }
+  }
+
+  if (animation.dragging) {
+    if (animation.draggingCenter) {
+      const [x, y] = animation.draggingPosition
+      ctx.strokeStyle = animation.draggingColor
+      ctx.beginPath()
+      ctx.moveTo(x, y - 10)
+      ctx.lineTo(x, y + 10)
+      ctx.moveTo(x - 10, y)
+      ctx.lineTo(x + 10, y)
+      ctx.stroke()
+    } else {
+      // draw the circle as if the object was there
+      const pos = animation.draggingPosition
+      const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
+      const color = animation.draggingColor
+      this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
     }
   }
 
@@ -1483,6 +1532,14 @@ module.exports = class Dialog extends EventEmitter {
     animation.pause()
     this.emit('open')
   }
+  show () {
+    this.element.classList.add('dialog-open')
+    this.element.classList.remove('dialog-closed')
+  }
+  hide () {
+    this.element.classList.remove('dialog-open')
+    this.element.classList.add('dialog-closed')
+  }
   close () {
     this.element.classList.remove('dialog-open')
     this.element.classList.add('dialog-closed')
@@ -1537,6 +1594,33 @@ newObjectDialog.on('open', () => {
   name.focus()
 })
 
+newObjectDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  animation.dragging = false
+  newObjectDialog.show()
+})
+
+document.getElementById('new-object-drag-position').addEventListener('click', () => {
+  const radiusNumber = Number(radius.value)
+  if (radiusNumber <= 0) {
+    radius.classList.add('dialog-input-invalid')
+    return
+  } else {
+    radius.classList.remove('dialog-input-invalid')
+  }
+  animation.dragging = true
+  animation.draggingRadius = radiusNumber
+  animation.draggingColor = color.value
+  newObjectDialog.hide()
+})
+
+document.getElementById('new-object-position-center').addEventListener('click', () => {
+  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+})
+
 document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
   if (newObjectDialog.validate()) {
     const position = Vec2.create(Number(positionX.value), Number(positionY.value))
@@ -1577,6 +1661,33 @@ objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
 
 objectDialog.on('open', () => {
   name.focus()
+})
+
+objectDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  animation.dragging = false
+  objectDialog.show()
+})
+
+document.getElementById('object-drag-position').addEventListener('click', () => {
+  const radiusNumber = Number(radius.value)
+  if (radiusNumber <= 0) {
+    radius.classList.add('dialog-input-invalid')
+    return
+  } else {
+    radius.classList.remove('dialog-input-invalid')
+  }
+  animation.dragging = true
+  animation.draggingRadius = radiusNumber
+  animation.draggingColor = color.value
+  objectDialog.hide()
+})
+
+document.getElementById('object-position-center').addEventListener('click', () => {
+  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
 })
 
 objectDialog.setValues = () => {
@@ -1715,6 +1826,22 @@ settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
 settingsDialog.on('open', () => {
   translationX.focus()
+})
+
+settingsDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  translationX.value = (animation.translation[0] + animation.draggingPosition[0] - animation.canvas.width / 2).toExponential(3)
+  translationY.value = (animation.translation[1] + animation.draggingPosition[1] - animation.canvas.height / 2).toExponential(3)
+  animation.dragging = false
+  animation.draggingCenter = false
+  settingsDialog.show()
+})
+
+document.getElementById('settings-drag-center').addEventListener('click', () => {
+  animation.dragging = true
+  animation.draggingColor = '#3477CC'
+  animation.draggingCenter = true
+  settingsDialog.hide()
 })
 
 // set the input values when the dialog is opened

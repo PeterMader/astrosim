@@ -29,6 +29,22 @@ settingsDialog.on('open', () => {
   translationX.focus()
 })
 
+settingsDialog.on('drag-end', () => {
+  // convert cursor position into simulation position
+  translationX.value = (animation.translation[0] + animation.draggingPosition[0] - animation.canvas.width / 2).toExponential(3)
+  translationY.value = (animation.translation[1] + animation.draggingPosition[1] - animation.canvas.height / 2).toExponential(3)
+  animation.dragging = false
+  animation.draggingCenter = false
+  settingsDialog.show()
+})
+
+document.getElementById('settings-drag-center').addEventListener('click', () => {
+  animation.dragging = true
+  animation.draggingColor = '#3477CC'
+  animation.draggingCenter = true
+  settingsDialog.hide()
+})
+
 // set the input values when the dialog is opened
 settingsDialog.setValues = () => {
   drawHistory.checked = animation.drawHistory

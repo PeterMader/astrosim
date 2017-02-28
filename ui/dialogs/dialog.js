@@ -83,6 +83,14 @@ module.exports = class Dialog extends EventEmitter {
     animation.pause()
     this.emit('open')
   }
+  show () {
+    this.element.classList.add('dialog-open')
+    this.element.classList.remove('dialog-closed')
+  }
+  hide () {
+    this.element.classList.remove('dialog-open')
+    this.element.classList.add('dialog-closed')
+  }
   close () {
     this.element.classList.remove('dialog-open')
     this.element.classList.add('dialog-closed')

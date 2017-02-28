@@ -6,16 +6,6 @@ const ui = require('../ui/ui.js')
 module.exports = function () {
   const {canvas} = this
 
-  const translate = (e) => {
-    if (!mouseHeld) {
-      return
-    }
-
-    animation.translate(startX - e.clientX, startY - e.clientY)
-
-    document.body.position = 'absolute'
-  }
-
   window.addEventListener('resize', () => {
     animation.adjust()
   })
@@ -38,11 +28,38 @@ module.exports = function () {
     document.body.position = 'fixed'
   })
   canvas.addEventListener('mousemove', (e) => {
-    translate(e)
+    if (animation.dragging) {
+      if (e.clientX > canvas.width * .95) {
+        animation.translate(1, 0)
+      } else if (e.clientX < canvas.width * .05) {
+        animation.translate(-1, 0)
+      } else if (e.clientY > canvas.height * .95) {
+        animation.translate(0, 1)
+      } else if (e.clientY < canvas.height * .05) {
+        animation.translate(0, -1)
+      }
+      animation.draggingPosition[0] = e.clientX
+      animation.draggingPosition[1] = e.clientY
+      animation.shouldRender = true
+      return
+    }
+
+    if (!mouseHeld) {
+      return
+    }
+
+    animation.translate(startX - e.clientX, startY - e.clientY)
+    document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
   })
-  canvas.addEventListener('mouseup', translate)
+
+  canvas.addEventListener('mouseup', (e) => {
+    if (animation.dragging && dialogManager.openDialog) {
+      dialogManager.openDialog.emit('drag-end')
+    }
+  })
+
   document.body.addEventListener('mouseup', () => {
     mouseHeld = false
   })
@@ -73,6 +90,13 @@ module.exports = function () {
         animation.drawLabels = !animation.drawLabels
         animation.shouldRender = true
       }
+    }
+  })
+
+  ui.keyboard.on('x', (e) => {
+    if (animation.dragging && ui.dialogs.openDialog) {
+      animation.dragging = false
+      ui.dialogs.openDialog.show()
     }
   })
 }
