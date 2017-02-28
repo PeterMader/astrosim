@@ -24,6 +24,11 @@ const animation = module.exports = ASTRO.animation = {
   drawControls: true,
   drawLabels: false,
 
+  dragging: false,
+  draggingPosition: Vec2.create(),
+  draggingRadius: 1,
+  draggingColor: '#FFFFFF',
+
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
       // draw all the objects

@@ -175,6 +175,10 @@ div.icon-before {
   padding: 10px;
 }
 
+.dialog .item div:not(.description) {
+  padding: 3px;
+}
+
 .dialog .item:last-child {
   background: #DDDDDD;
   display: flex;
