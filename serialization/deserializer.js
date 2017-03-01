@@ -3,6 +3,8 @@ const Body = require('../content/body.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
 
+const isColorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+
 module.exports = class Deserializer {
 
   static selectScene (data, cb) {
@@ -54,13 +56,22 @@ module.exports = class Deserializer {
       (typeof data.viewport === 'object') &&
       (typeof data.viewport.translationX === 'number') && !isNaN(data.viewport.translationX) &&
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&
-      (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
+      (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) && data.viewport.ratio > 0 &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&
       (Array.isArray(data.content.objects)) &&
       (Array.isArray(data.content.selectedObjectIndices)) &&
       (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) &&
-      data.content.objects.filter((item) => typeof item === 'object')
+      data.content.objects.filter((item) =>
+        typeof item === 'object' &&
+        typeof item.name === 'string' &&
+        typeof item.positionX === 'number' &&
+        typeof item.positionY === 'number' &&
+        typeof item.velocityX === 'number' &&
+        typeof item.velocityY === 'number' &&
+        typeof item.mass === 'number' && item.mass > 0 &&
+        typeof item.radius === 'number' && item.radius > 0 &&
+        typeof item.color === 'string' && isColorRegex.test(item.color))
   }
 
 }
