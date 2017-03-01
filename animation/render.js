@@ -42,6 +42,7 @@ animation.renderControls = function () {
   ctx.textAlign = 'right'
   ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
   ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
+  ctx.fillText(`Ticks: ${content.ticks.toExponential(1)}`, canvas.width - 20, 60)
 }
 
 animation.render = function () {
