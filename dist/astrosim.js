@@ -338,6 +338,11 @@ animation.renderControls = function () {
   ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
   ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
   ctx.fillText(`Ticks: ${content.ticks.toExponential(1)}`, canvas.width - 20, 60)
+
+  if (animation.dragging) {
+    ctx.textAlign = 'center'
+    ctx.fillText(`Click to select a position or hit X to return.`, canvas.width / 2, 80)
+  }
 }
 
 animation.render = function () {
