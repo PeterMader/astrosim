@@ -20,9 +20,16 @@ module.exports = function () {
   })
 
   // events for the canvas translation
-  let startX = 0, startY = 0, mouseHeld = false
+  let startX = 0, startY = 0
   canvas.addEventListener('mousedown', (e) => {
-    mouseHeld = true
+    animation.mouseHeld = true
+
+    if (animation.dragging) {
+      animation.draggingPositionStart[0] = e.clientX
+      animation.draggingPositionStart[1] = e.clientY
+      return
+    }
+
     startX = e.clientX
     startY = e.clientY
     document.body.position = 'fixed'
@@ -31,20 +38,33 @@ module.exports = function () {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
         animation.translate(1, 0)
+        animation.draggingPositionStart[0] -= 1
+        animation.draggingPositionEnd[0] -= 1
       } else if (e.clientX < canvas.width * .05) {
         animation.translate(-1, 0)
+        animation.draggingPositionStart[0] += 1
+        animation.draggingPositionEnd[0] += 1
       } else if (e.clientY > canvas.height * .95) {
         animation.translate(0, 1)
+        animation.draggingPositionStart[1] -= 1
+        animation.draggingPositionEnd[1] -= 1
       } else if (e.clientY < canvas.height * .05) {
         animation.translate(0, -1)
+        animation.draggingPositionStart[1] += 1
+        animation.draggingPositionEnd[1] += 1
       }
-      animation.draggingPosition[0] = e.clientX
-      animation.draggingPosition[1] = e.clientY
+      if (animation.mouseHeld) {
+        animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionEnd[1] = e.clientY
+      } else {
+        animation.draggingPositionStart[0] = animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionStart[1] = animation.draggingPositionEnd[1] = e.clientY
+      }
       animation.shouldRender = true
       return
     }
 
-    if (!mouseHeld) {
+    if (!animation.mouseHeld) {
       return
     }
 
@@ -61,7 +81,7 @@ module.exports = function () {
   })
 
   document.body.addEventListener('mouseup', () => {
-    mouseHeld = false
+    animation.mouseHeld = false
   })
 
   ui.keyboard.on('keyup', (e) => {
@@ -90,13 +110,6 @@ module.exports = function () {
         animation.drawLabels = !animation.drawLabels
         animation.shouldRender = true
       }
-    }
-  })
-
-  ui.keyboard.on('x', (e) => {
-    if (animation.dragging && ui.dialogs.openDialog) {
-      animation.dragging = false
-      ui.dialogs.openDialog.show()
     }
   })
 }

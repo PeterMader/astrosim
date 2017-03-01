@@ -27,8 +27,10 @@ objectDialog.on('open', () => {
 
 objectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
-  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionX.value = ((animation.draggingPositionStart[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPositionStart[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  velocityX.value = ((animation.draggingPositionEnd[0] - animation.draggingPositionStart[0]) / animation.ratio).toExponential(3)
+  velocityY.value = ((animation.draggingPositionEnd[1] - animation.draggingPositionStart[1]) / animation.ratio).toExponential(3)
   animation.dragging = false
   objectDialog.show()
 })

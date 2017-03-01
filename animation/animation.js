@@ -25,9 +25,13 @@ const animation = module.exports = ASTRO.animation = {
   drawLabels: false,
 
   dragging: false,
-  draggingPosition: Vec2.create(),
+  draggingPositionStart: Vec2.create(),
+  draggingPositionEnd: Vec2.create(),
   draggingRadius: 1,
+  draggingCenter: false,
   draggingColor: '#FFFFFF',
+
+  mouseHeld: false,
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {

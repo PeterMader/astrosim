@@ -31,8 +31,8 @@ settingsDialog.on('open', () => {
 
 settingsDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  translationX.value = (animation.translation[0] + animation.draggingPosition[0] - animation.canvas.width / 2).toExponential(3)
-  translationY.value = (animation.translation[1] + animation.draggingPosition[1] - animation.canvas.height / 2).toExponential(3)
+  translationX.value = (animation.translation[0] + animation.draggingPositionEnd[0] - animation.canvas.width / 2).toExponential(3)
+  translationY.value = (animation.translation[1] + animation.draggingPositionEnd[1] - animation.canvas.height / 2).toExponential(3)
   animation.dragging = false
   animation.draggingCenter = false
   settingsDialog.show()

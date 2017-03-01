@@ -26,9 +26,13 @@ const animation = module.exports = ASTRO.animation = {
   drawLabels: false,
 
   dragging: false,
-  draggingPosition: Vec2.create(),
+  draggingPositionStart: Vec2.create(),
+  draggingPositionEnd: Vec2.create(),
   draggingRadius: 1,
+  draggingCenter: false,
   draggingColor: '#FFFFFF',
+
+  mouseHeld: false,
 
   animationLoop: new Loop(() => {
     if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
@@ -155,9 +159,16 @@ module.exports = function () {
   })
 
   // events for the canvas translation
-  let startX = 0, startY = 0, mouseHeld = false
+  let startX = 0, startY = 0
   canvas.addEventListener('mousedown', (e) => {
-    mouseHeld = true
+    animation.mouseHeld = true
+
+    if (animation.dragging) {
+      animation.draggingPositionStart[0] = e.clientX
+      animation.draggingPositionStart[1] = e.clientY
+      return
+    }
+
     startX = e.clientX
     startY = e.clientY
     document.body.position = 'fixed'
@@ -166,20 +177,33 @@ module.exports = function () {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
         animation.translate(1, 0)
+        animation.draggingPositionStart[0] -= 1
+        animation.draggingPositionEnd[0] -= 1
       } else if (e.clientX < canvas.width * .05) {
         animation.translate(-1, 0)
+        animation.draggingPositionStart[0] += 1
+        animation.draggingPositionEnd[0] += 1
       } else if (e.clientY > canvas.height * .95) {
         animation.translate(0, 1)
+        animation.draggingPositionStart[1] -= 1
+        animation.draggingPositionEnd[1] -= 1
       } else if (e.clientY < canvas.height * .05) {
         animation.translate(0, -1)
+        animation.draggingPositionStart[1] += 1
+        animation.draggingPositionEnd[1] += 1
       }
-      animation.draggingPosition[0] = e.clientX
-      animation.draggingPosition[1] = e.clientY
+      if (animation.mouseHeld) {
+        animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionEnd[1] = e.clientY
+      } else {
+        animation.draggingPositionStart[0] = animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionStart[1] = animation.draggingPositionEnd[1] = e.clientY
+      }
       animation.shouldRender = true
       return
     }
 
-    if (!mouseHeld) {
+    if (!animation.mouseHeld) {
       return
     }
 
@@ -196,7 +220,7 @@ module.exports = function () {
   })
 
   document.body.addEventListener('mouseup', () => {
-    mouseHeld = false
+    animation.mouseHeld = false
   })
 
   ui.keyboard.on('keyup', (e) => {
@@ -225,13 +249,6 @@ module.exports = function () {
         animation.drawLabels = !animation.drawLabels
         animation.shouldRender = true
       }
-    }
-  })
-
-  ui.keyboard.on('x', (e) => {
-    if (animation.dragging && ui.dialogs.openDialog) {
-      animation.dragging = false
-      ui.dialogs.openDialog.show()
     }
   })
 }
@@ -302,6 +319,10 @@ const Vec2 = require('../content/vec2.js')
 animation.drawCircle = function (x, y, radius, color) {
   const {ctx} = this
   ctx.fillStyle = color
+
+  // deactivate subpixel-rendering by rounding the coordinates
+  const xInt = (x + 0.5) | 0
+  const yInt = (y + 0.5) | 0
 
   // draw the circle shape and fill it
   ctx.beginPath()
@@ -415,7 +436,7 @@ animation.render = function () {
 
   if (animation.dragging) {
     if (animation.draggingCenter) {
-      const [x, y] = animation.draggingPosition
+      const [x, y] = animation.draggingPositionEnd
       ctx.strokeStyle = animation.draggingColor
       ctx.beginPath()
       ctx.moveTo(x, y - 10)
@@ -425,10 +446,20 @@ animation.render = function () {
       ctx.stroke()
     } else {
       // draw the circle as if the object was there
-      const pos = animation.draggingPosition
+      const pos = animation.draggingPositionStart
       const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
       const color = animation.draggingColor
       this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+
+      // draw the arrow
+      if (animation.mouseHeld) {
+        const endPos = animation.draggingPositionEnd
+        ctx.strokeStyle = '#FFFFFF'
+        ctx.beginPath()
+        ctx.moveTo(pos[0], pos[1])
+        ctx.lineTo(endPos[0], endPos[1])
+        ctx.stroke()
+      }
     }
   }
 
@@ -1613,8 +1644,10 @@ newObjectDialog.on('open', () => {
 
 newObjectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
-  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionX.value = ((animation.draggingPositionStart[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPositionStart[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  velocityX.value = ((animation.draggingPositionEnd[0] - animation.draggingPositionStart[0]) / animation.ratio).toExponential(3)
+  velocityY.value = ((animation.draggingPositionEnd[1] - animation.draggingPositionStart[1]) / animation.ratio).toExponential(3)
   animation.dragging = false
   newObjectDialog.show()
 })
@@ -1682,8 +1715,10 @@ objectDialog.on('open', () => {
 
 objectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
-  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionX.value = ((animation.draggingPositionStart[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionY.value = ((animation.draggingPositionStart[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  velocityX.value = ((animation.draggingPositionEnd[0] - animation.draggingPositionStart[0]) / animation.ratio).toExponential(3)
+  velocityY.value = ((animation.draggingPositionEnd[1] - animation.draggingPositionStart[1]) / animation.ratio).toExponential(3)
   animation.dragging = false
   objectDialog.show()
 })
@@ -1847,8 +1882,8 @@ settingsDialog.on('open', () => {
 
 settingsDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  translationX.value = (animation.translation[0] + animation.draggingPosition[0] - animation.canvas.width / 2).toExponential(3)
-  translationY.value = (animation.translation[1] + animation.draggingPosition[1] - animation.canvas.height / 2).toExponential(3)
+  translationX.value = (animation.translation[0] + animation.draggingPositionEnd[0] - animation.canvas.width / 2).toExponential(3)
+  translationY.value = (animation.translation[1] + animation.draggingPositionEnd[1] - animation.canvas.height / 2).toExponential(3)
   animation.dragging = false
   animation.draggingCenter = false
   settingsDialog.show()
@@ -1994,6 +2029,11 @@ module.exports = function () {
   })
 
   ui.keyboard.on('x', () => {
+    if (animation.dragging && ui.dialogs.openDialog) {
+      animation.dragging = false
+      ui.dialogs.openDialog.show()
+      return
+    }
     if (ui.dialogs.openDialog && document.activeElement === document.body) {
       ui.dialogs.openDialog.close()
     }
@@ -2214,6 +2254,9 @@ const ui = module.exports = ASTRO.ui = {
   },
 
   pause () {
+    if (animation.dragging) {
+      return
+    }
     animation.pause()
     this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
@@ -2221,6 +2264,9 @@ const ui = module.exports = ASTRO.ui = {
     this.togglePauseButton.classList.remove('pause-button')
   },
   unpause () {
+    if (animation.dragging) {
+      return
+    }
     animation.unpause()
     this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'

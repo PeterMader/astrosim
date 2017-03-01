@@ -96,6 +96,11 @@ module.exports = function () {
   })
 
   ui.keyboard.on('x', () => {
+    if (animation.dragging && ui.dialogs.openDialog) {
+      animation.dragging = false
+      ui.dialogs.openDialog.show()
+      return
+    }
     if (ui.dialogs.openDialog && document.activeElement === document.body) {
       ui.dialogs.openDialog.close()
     }

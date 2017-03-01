@@ -175,6 +175,9 @@ const ui = module.exports = ASTRO.ui = {
   },
 
   pause () {
+    if (animation.dragging) {
+      return
+    }
     animation.pause()
     this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
@@ -182,6 +185,9 @@ const ui = module.exports = ASTRO.ui = {
     this.togglePauseButton.classList.remove('pause-button')
   },
   unpause () {
+    if (animation.dragging) {
+      return
+    }
     animation.unpause()
     this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'

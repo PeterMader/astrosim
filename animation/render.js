@@ -8,6 +8,10 @@ animation.drawCircle = function (x, y, radius, color) {
   const {ctx} = this
   ctx.fillStyle = color
 
+  // deactivate subpixel-rendering by rounding the coordinates
+  const xInt = (x + 0.5) | 0
+  const yInt = (y + 0.5) | 0
+
   // draw the circle shape and fill it
   ctx.beginPath()
   ctx.moveTo(x, y - radius)
@@ -120,7 +124,7 @@ animation.render = function () {
 
   if (animation.dragging) {
     if (animation.draggingCenter) {
-      const [x, y] = animation.draggingPosition
+      const [x, y] = animation.draggingPositionEnd
       ctx.strokeStyle = animation.draggingColor
       ctx.beginPath()
       ctx.moveTo(x, y - 10)
@@ -130,10 +134,20 @@ animation.render = function () {
       ctx.stroke()
     } else {
       // draw the circle as if the object was there
-      const pos = animation.draggingPosition
+      const pos = animation.draggingPositionStart
       const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
       const color = animation.draggingColor
       this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+
+      // draw the arrow
+      if (animation.mouseHeld) {
+        const endPos = animation.draggingPositionEnd
+        ctx.strokeStyle = '#FFFFFF'
+        ctx.beginPath()
+        ctx.moveTo(pos[0], pos[1])
+        ctx.lineTo(endPos[0], endPos[1])
+        ctx.stroke()
+      }
     }
   }
 
