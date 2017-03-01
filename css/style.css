@@ -175,8 +175,8 @@ div.icon-before {
   padding: 10px;
 }
 
-.dialog .item div:not(.description) {
-  padding: 3px;
+.dialog .group-item {
+  margin-bottom: 10px;
 }
 
 .dialog .item:last-child {

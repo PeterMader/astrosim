@@ -8,5 +8,5 @@
 * **N** to open the 'Create new object' dialog.
 * **S** to open the 'Scene' dialog.
 * **P** to open the 'Settings' dialog.
-* **X** to close the currently open dialog without submitting it; this only works if no input element is active.
+* **X** to close the currently open dialog without submitting it; this only works if no input element is active. If in dragging mode, the dialog reappears when you hit **X**.
 * **M** to center the viewport at the origin.
