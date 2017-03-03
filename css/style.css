@@ -252,6 +252,28 @@ button:hover {
   color: #FFFFFF;
 }
 
+.unit-push-button {
+  margin: 0;
+  display: inline;
+  border-radius: 0;
+  background-color: #555555;
+  padding: 3px 7px 3px 7px;
+}
+
+.unit-push-button:last-of-type {
+  border-radius: 0 2px 2px 0;
+}
+
+.sub {
+  font-size: 70%;
+  position: relative;
+  top: 2px;
+}
+
+.unit-push-button.pushed {
+  background-color: #111111;
+}
+
 input {
   border: 1px solid #555555;
   padding: 3px;
