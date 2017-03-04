@@ -35,6 +35,7 @@ settingsDialog.on('drag-end', () => {
   translationY.value = (animation.translation[1] + animation.draggingPositionEnd[1] - animation.canvas.height / 2).toExponential(3)
   animation.dragging = false
   animation.draggingCenter = false
+  animation.shouldRender = true
   settingsDialog.show()
 })
 

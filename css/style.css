@@ -53,38 +53,41 @@ a:hover {
 }
 
 div.icon-before {
-  background-position: 3px center;
   padding-left: 30px;
+  background-image: url('../res/sprite.png');
   background-repeat: no-repeat;
+}
+
+#center-viewport, .drag-button {
+  padding-left: 30px;
+  border-radius: 4px;
+  background-repeat: no-repeat;
+  background-image: url('../res/sprite.png');
+}
+
+.drag-button {
+  background-position: 3px -198px;
 }
 
 #center-viewport {
-  background-position: 3px center;
-  padding-left: 30px;
+  background-position: 3px -78px;
+}
+
+.center-button, .edit-button {
+  height: 30px;
+  width: 30px;
+  padding: 0;
   border-radius: 4px;
   background-repeat: no-repeat;
-  background-image: url('../res/icon_center.png');
+  background-image: url('../res/sprite.png');
 }
 
 .center-button {
-  background-position: center;
-  height: 30px;
-  width: 30px;
-  padding: 0;
-  border-radius: 4px;
-  background-repeat: no-repeat;
-  background-image: url('../res/icon_center.png');
+  background-position: center -77px;
 }
 
 .edit-button {
-  background-position: center;
-  height: 30px;
-  width: 30px;
-  line-height: 30px;
-  padding: 0;
-  border-radius: 4px;
-  background-repeat: no-repeat;
-  background-image: url('../res/icon_properties.png');
+  background-position: center -436px;
 }
 
 .selected-object .center-button {
@@ -92,35 +95,35 @@ div.icon-before {
 }
 
 .pause-button {
-  background-image: url('../res/icon_pause.png');
+  background-position: 3px -352px;
 }
 
 .play-button {
-  background-image: url('../res/icon_play.png');
+  background-position: 3px -392px;
 }
 
 #open-settings-dialog {
-  background-image: url('../res/icon_settings.png');
+  background-position: 3px -512px;
 }
 
 #open-new-object-dialog {
-  background-image: url('../res/icon_add.png');
+  background-position: 3px -32px;
 }
 
 #serialize-button {
-  background-image: url('../res/icon_export.png');
+  background-position: 3px -232px;
 }
 
 #open-scene {
-  background-image: url('../res/icon_scene.png');
+  background-position: 3px -472px;
 }
 
 #open-about {
-  background-image: url('../res/icon_about.png');
+  background-position: 3px 8px;
 }
 
 #open-details {
-  background-image: url('../res/icon_details.png');
+  background-position: 3px -152px;
 }
 
 #open-side-bar {
@@ -291,8 +294,9 @@ input:focus {
   border-bottom: 1px solid #EEEEEE;
   cursor: pointer;
   color: #555555;
+  height: 40px;
+  line-height: 40px;
   font-size: 90%;
-  padding: 10px;
 }
 
 .main-button:hover {

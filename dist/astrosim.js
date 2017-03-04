@@ -362,6 +362,9 @@ animation.renderControls = function () {
   ctx.fillText(`Ticks: ${content.ticks.toExponential(1)}`, canvas.width - 20, 60)
 
   if (animation.dragging) {
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(canvas.width / 2 - 100, 64, 200, 22)
+    ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'center'
     ctx.fillText(`Click to select a position or hit X to return.`, canvas.width / 2, 80)
   }
@@ -1978,6 +1981,7 @@ settingsDialog.on('drag-end', () => {
   translationY.value = (animation.translation[1] + animation.draggingPositionEnd[1] - animation.canvas.height / 2).toExponential(3)
   animation.dragging = false
   animation.draggingCenter = false
+  animation.shouldRender = true
   settingsDialog.show()
 })
 
