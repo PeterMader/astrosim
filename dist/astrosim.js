@@ -65,7 +65,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":10,"../content/vec3.js":19,"./camera.js":2,"./event-listeners.js":4,"./loop.js":6,"./renderer.js":7,"./transformation.js":8}],2:[function(require,module,exports){
+},{"../astrosim.js":10,"../content/vec3.js":17,"./camera.js":2,"./event-listeners.js":4,"./loop.js":6,"./renderer.js":7,"./transformation.js":8}],2:[function(require,module,exports){
 const Mat4 = require('../content/mat4.js')
 const Vec3 = require('../content/vec3.js')
 
@@ -110,7 +110,7 @@ module.exports = class Camera {
 
 }
 
-},{"../content/mat4.js":14,"../content/vec3.js":19}],3:[function(require,module,exports){
+},{"../content/mat4.js":14,"../content/vec3.js":17}],3:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -275,16 +275,21 @@ module.exports = function () {
   })
 }
 
-},{"../content/math.js":15,"../ui/ui.js":30,"./animation.js":1}],5:[function(require,module,exports){
+},{"../content/math.js":15,"../ui/ui.js":28,"./animation.js":1}],5:[function(require,module,exports){
 module.exports = `
 precision mediump float;
 
 uniform vec3 uObjectColor;
+uniform float uRadius;
 
 void main(void) {
+  vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+  float r = dot(cxy, cxy);
+  if (r > 1.0) {
+    discard;
+  }
   gl_FragColor = vec4(uObjectColor, 1.0);
 }
-
 `
 
 },{}],6:[function(require,module,exports){
@@ -406,13 +411,12 @@ const Renderer = module.exports = class {
 
     gl.useProgram(program)
 
-    program.vertexPositionAttribute = gl.getAttribLocation(program, 'aVertexPosition')
-    gl.enableVertexAttribArray(program.vertexPositionAttribute)
-
     program.projectionMatrixUniform = gl.getUniformLocation(program, 'uProjectionMatrix')
     program.viewMatrixUniform = gl.getUniformLocation(program, 'uViewMatrix')
     program.modelMatrixUniform = gl.getUniformLocation(program, 'uModelMatrix')
 
+    program.objectPositionUniform = gl.getUniformLocation(program, 'uPosition')
+    program.objectRadiusUniform = gl.getUniformLocation(program, 'uRadius')
     program.objectColorUniform = gl.getUniformLocation(program, 'uObjectColor')
 
     gl.clearColor(.3, .3, .4, 1.0)
@@ -456,12 +460,6 @@ const Renderer = module.exports = class {
     return program
   }
 
-  prepareObject (object) {
-    const {gl} = this
-    object.vertexPositionBuffer = this.createBuffer(object.model.vertices, gl.ARRAY_BUFFER)
-    object.vertexIndexBuffer = this.createBuffer(object.model.indices, gl.ELEMENT_ARRAY_BUFFER)
-  }
-
   render (camera) {
     const {canvas, gl, program} = this
     const {objects} = content
@@ -481,15 +479,9 @@ const Renderer = module.exports = class {
       // draw a single item
       const item = objects[index]
 
-      const {vertexPositionBuffer, vertexIndexBuffer} = item
-
       // calculate the model-view-matrix
       Mat4.identity(model)
       Mat4.translate(model, item.position, model)
-
-      // set the vertex positions
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer)
-      gl.vertexAttribPointer(program.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0)
 
       // set matrix uniforms
       gl.uniformMatrix4fv(program.projectionMatrixUniform, false, projection)
@@ -497,15 +489,25 @@ const Renderer = module.exports = class {
       gl.uniformMatrix4fv(program.modelMatrixUniform, false, model)
 
       gl.uniform3f(program.objectColorUniform, item.color.r / 255, item.color.g / 255, item.color.b / 255)
-
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer)
-      gl.drawElements(gl.TRIANGLES, item.model.numberOfIndices, gl.UNSIGNED_SHORT, 0)
+      gl.uniform3f(program.objectPositionUniform, item.position[0], item.position[1], item.position[2])
+      gl.uniform1f(program.objectRadiusUniform, item.radius)
+      gl.drawArrays(gl.POINTS, 0, 1)
     }
+
+    Mat4.identity(model)
+    gl.uniformMatrix4fv(program.projectionMatrixUniform, false, projection)
+    gl.uniformMatrix4fv(program.viewMatrixUniform, false, view)
+    gl.uniformMatrix4fv(program.modelMatrixUniform, false, model)
+
+    gl.uniform3f(program.objectColorUniform, 1, 1, 1)
+    gl.uniform3f(program.objectPositionUniform, 0, 0, 0)
+    gl.uniform1f(program.objectRadiusUniform, 10)
+    gl.drawArrays(gl.POINTS, 0, 1)
   }
 
 }
 
-},{"../content/content.js":12,"../content/mat4.js":14,"../content/vec3.js":19,"./fragment-shader.js":5,"./vertex-shader.js":9}],8:[function(require,module,exports){
+},{"../content/content.js":12,"../content/mat4.js":14,"../content/vec3.js":17,"./fragment-shader.js":5,"./vertex-shader.js":9}],8:[function(require,module,exports){
 const animation = require('./animation.js')
 const content = require('../content/content.js')
 const Vec2 = require('../content/vec2.js')
@@ -529,18 +531,24 @@ animation.scale = function (factor, centerX, centerY) {
   animation.shouldRender = true
 }
 
-},{"../content/content.js":12,"../content/vec2.js":18,"./animation.js":1}],9:[function(require,module,exports){
+},{"../content/content.js":12,"../content/vec2.js":16,"./animation.js":1}],9:[function(require,module,exports){
 module.exports = `
 precision mediump float;
-
-attribute vec3 aVertexPosition;
 
 uniform mat4 uModelMatrix;
 uniform mat4 uProjectionMatrix;
 uniform mat4 uViewMatrix;
 
+uniform vec3 uPosition;
+uniform float uRadius;
+
 void main(void) {
-  gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aVertexPosition, 1.0);
+  vec4 pos = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(uPosition, 1.0);
+  vec3 plusRadius = vec3(uPosition);
+  plusRadius.x = plusRadius.x + uRadius;
+  vec4 pos2 = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(plusRadius, 1.0);
+  gl_Position = pos;
+  gl_PointSize = 10.0 * uRadius / pos2.z + 10.0;
 }
 `
 
@@ -566,11 +574,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.mainLoop.start()
 })
 
-},{"./animation/animation.js":1,"./animation/loop.js":6,"./content/content.js":12,"./ui/ui.js":30}],11:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":6,"./content/content.js":12,"./ui/ui.js":28}],11:[function(require,module,exports){
 const Vec3 = require('./vec3.js')
 const Mat4 = require('./mat4.js')
 const Color = require('../animation/color.js')
-const Sphere = require('./sphere.js')
 const {content} = require('../astrosim.js')
 const ASTRO = require('../astrosim.js')
 
@@ -582,8 +589,6 @@ module.exports = class Body {
     this.radius = radius
     this.color = new Color()
     this.name = name
-
-    this.model = new Sphere(radius)
 
     // remember the last 100 positions
     this.history = new Float32Array(300)
@@ -718,7 +723,7 @@ module.exports = class Body {
   }
 }
 
-},{"../animation/color.js":3,"../astrosim.js":10,"./mat4.js":14,"./sphere.js":17,"./vec3.js":19}],12:[function(require,module,exports){
+},{"../animation/color.js":3,"../astrosim.js":10,"./mat4.js":14,"./vec3.js":17}],12:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const ASTRO = require('../astrosim.js')
 const Vec3 = require('./vec3.js')
@@ -754,7 +759,6 @@ const content = module.exports = ASTRO.content = {
       const object = arguments[index]
       this.objects.push(object)
       object.id = this.currentId += 1
-      ASTRO.animation.renderer.prepareObject(object)
     }
     ASTRO.ui.update()
   },
@@ -797,7 +801,7 @@ const content = module.exports = ASTRO.content = {
   }
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":10,"./vec3.js":19}],13:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":10,"./vec3.js":17}],13:[function(require,module,exports){
 module.exports = class EventEmitter {
 
   constructor () {
@@ -1143,85 +1147,6 @@ module.exports = {
 }
 
 },{}],16:[function(require,module,exports){
-module.exports = class Model {
-
-  constructor () {
-    this.vertices = new Float32Array()
-    this.numberOfVertices = 0
-    this.indices = new Uint16Array()
-    this.numberOfIndices = 0
-  }
-
-  setVertices (data, number) {
-    this.vertices = new Float32Array(data)
-    this.numberOfVertices = number
-  }
-
-  setIndices (data, number) {
-    this.indices = new Uint16Array(data)
-    this.numberOfIndices = number
-  }
-
-}
-
-},{}],17:[function(require,module,exports){
-const Model = require('./model.js')
-
-const vertices = []
-const indices = []
-
-let latitude = 0
-let longitude = 0
-
-const MAX_LATITUDE = 10
-const MAX_LONGITUDE = 10
-
-for (latitude = 0; latitude <= MAX_LATITUDE; latitude += 1) {
-  const angle1 = latitude * Math.PI / MAX_LATITUDE
-  const sin1 = Math.sin(angle1)
-  const cos1 = Math.cos(angle1)
-
-  for (longitude = 0; longitude <= MAX_LONGITUDE; longitude += 1) {
-    const angle2 = longitude * 2 * Math.PI / MAX_LONGITUDE
-    const sin2 = Math.sin(angle2)
-    const cos2 = Math.cos(angle2)
-
-    const x = sin1 * cos2
-    const y = cos1
-    const z = sin1 * sin2
-
-    vertices.push(x)
-    vertices.push(y)
-    vertices.push(z)
-  }
-}
-
-// this second loop is necessary because we don't need the last item, so the condition is '<', rather than '<='!
-for (latitude = 0; latitude < MAX_LATITUDE; latitude += 1) {
-  for (longitude = 0; longitude < MAX_LONGITUDE; longitude += 1) {
-    const first = (latitude * (MAX_LONGITUDE + 1)) + longitude
-    const second = first + MAX_LONGITUDE + 1
-    indices.push(first)
-    indices.push(second)
-    indices.push(first + 1)
-
-    indices.push(second)
-    indices.push(second + 1)
-    indices.push(first + 1)
-  }
-}
-
-module.exports = class Sphere extends Model {
-
-  constructor (radius) {
-    super()
-    this.setVertices(vertices.map((n) => n * radius), vertices.length / 3)
-    this.setIndices(indices, indices.length)
-  }
-
-}
-
-},{"./model.js":16}],18:[function(require,module,exports){
 module.exports = class Vec2 {
 
   static create (x, y) {
@@ -1320,7 +1245,7 @@ module.exports = class Vec2 {
 
 }
 
-},{}],19:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 module.exports = class Vec3 {
 
   static create (x, y, z) {
@@ -1407,7 +1332,7 @@ module.exports = class Vec3 {
 
 }
 
-},{}],20:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const Body = require('../content/body.js')
 const content = require('../content/content.js')
@@ -1460,7 +1385,7 @@ module.exports = class Deserializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":11,"../content/content.js":12,"../ui/ui.js":30}],21:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":11,"../content/content.js":12,"../ui/ui.js":28}],19:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1500,7 +1425,7 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":12,"../ui/ui.js":30}],22:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":12,"../ui/ui.js":28}],20:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 
@@ -1518,7 +1443,7 @@ document.getElementById('deserialize').addEventListener('click', () => {
   reader.readAsText(file.files[0])
 })
 
-},{"../../serialization/deserializer.js":20,"./dialog.js":23}],23:[function(require,module,exports){
+},{"../../serialization/deserializer.js":18,"./dialog.js":21}],21:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const ui = require('../../ui/ui.js')
 
@@ -1610,7 +1535,7 @@ module.exports = class Dialog {
   }
 }
 
-},{"../../animation/animation.js":1,"../../ui/ui.js":30}],24:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../ui/ui.js":28}],22:[function(require,module,exports){
 module.exports = {
 
   settingsDialog: null,
@@ -1626,7 +1551,7 @@ module.exports = {
   }
 }
 
-},{"./deserialize-dialog.js":22,"./new-object-dialog.js":25,"./object-dialog.js":26,"./settings-dialog.js":27}],25:[function(require,module,exports){
+},{"./deserialize-dialog.js":20,"./new-object-dialog.js":23,"./object-dialog.js":24,"./settings-dialog.js":25}],23:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec3 = require('../../content/vec3.js')
@@ -1667,7 +1592,7 @@ document.getElementById('new-object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":3,"../../content/body.js":11,"../../content/content.js":12,"../../content/vec3.js":19,"./dialog.js":23}],26:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":3,"../../content/body.js":11,"../../content/content.js":12,"../../content/vec3.js":17,"./dialog.js":21}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Color = require('../../animation/color.js')
@@ -1732,7 +1657,7 @@ document.getElementById('object-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":3,"../../content/content.js":12,"../../ui/ui.js":30,"./dialog.js":23}],27:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":3,"../../content/content.js":12,"../../ui/ui.js":28,"./dialog.js":21}],25:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1777,7 +1702,7 @@ document.getElementById('settings-submit').addEventListener('click', () => {
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":12,"../../ui/ui.js":30,"./dialog.js":23}],28:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":12,"../../ui/ui.js":28,"./dialog.js":21}],26:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1841,7 +1766,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":10,"../content/content.js":12,"../serialization/serializer.js":21,"../ui/ui.js":30}],29:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":10,"../content/content.js":12,"../serialization/serializer.js":19,"../ui/ui.js":28}],27:[function(require,module,exports){
 const EventEmitter = require('../content/event-emitter.js')
 
 module.exports = class Keyboard extends EventEmitter {
@@ -1867,7 +1792,7 @@ module.exports = class Keyboard extends EventEmitter {
 
 }
 
-},{"../content/event-emitter.js":13}],30:[function(require,module,exports){
+},{"../content/event-emitter.js":13}],28:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 const content = require('../content/content.js')
@@ -1978,4 +1903,4 @@ const ui = module.exports = ASTRO.ui = {
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":10,"../content/body.js":11,"../content/content.js":12,"./dialogs/init-dialogs.js":24,"./event-listeners.js":28,"./keyboard.js":29}]},{},[10]);
+},{"../animation/animation.js":1,"../astrosim.js":10,"../content/body.js":11,"../content/content.js":12,"./dialogs/init-dialogs.js":22,"./event-listeners.js":26,"./keyboard.js":27}]},{},[10]);

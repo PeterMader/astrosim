@@ -60,13 +60,12 @@ const Renderer = module.exports = class {
 
     gl.useProgram(program)
 
-    program.vertexPositionAttribute = gl.getAttribLocation(program, 'aVertexPosition')
-    gl.enableVertexAttribArray(program.vertexPositionAttribute)
-
     program.projectionMatrixUniform = gl.getUniformLocation(program, 'uProjectionMatrix')
     program.viewMatrixUniform = gl.getUniformLocation(program, 'uViewMatrix')
     program.modelMatrixUniform = gl.getUniformLocation(program, 'uModelMatrix')
 
+    program.objectPositionUniform = gl.getUniformLocation(program, 'uPosition')
+    program.objectRadiusUniform = gl.getUniformLocation(program, 'uRadius')
     program.objectColorUniform = gl.getUniformLocation(program, 'uObjectColor')
 
     gl.clearColor(.3, .3, .4, 1.0)
@@ -110,12 +109,6 @@ const Renderer = module.exports = class {
     return program
   }
 
-  prepareObject (object) {
-    const {gl} = this
-    object.vertexPositionBuffer = this.createBuffer(object.model.vertices, gl.ARRAY_BUFFER)
-    object.vertexIndexBuffer = this.createBuffer(object.model.indices, gl.ELEMENT_ARRAY_BUFFER)
-  }
-
   render (camera) {
     const {canvas, gl, program} = this
     const {objects} = content
@@ -135,15 +128,9 @@ const Renderer = module.exports = class {
       // draw a single item
       const item = objects[index]
 
-      const {vertexPositionBuffer, vertexIndexBuffer} = item
-
       // calculate the model-view-matrix
       Mat4.identity(model)
       Mat4.translate(model, item.position, model)
-
-      // set the vertex positions
-      gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer)
-      gl.vertexAttribPointer(program.vertexPositionAttribute, 3, gl.FLOAT, false, 0, 0)
 
       // set matrix uniforms
       gl.uniformMatrix4fv(program.projectionMatrixUniform, false, projection)
@@ -151,10 +138,20 @@ const Renderer = module.exports = class {
       gl.uniformMatrix4fv(program.modelMatrixUniform, false, model)
 
       gl.uniform3f(program.objectColorUniform, item.color.r / 255, item.color.g / 255, item.color.b / 255)
-
-      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, vertexIndexBuffer)
-      gl.drawElements(gl.TRIANGLES, item.model.numberOfIndices, gl.UNSIGNED_SHORT, 0)
+      gl.uniform3f(program.objectPositionUniform, item.position[0], item.position[1], item.position[2])
+      gl.uniform1f(program.objectRadiusUniform, item.radius)
+      gl.drawArrays(gl.POINTS, 0, 1)
     }
+
+    Mat4.identity(model)
+    gl.uniformMatrix4fv(program.projectionMatrixUniform, false, projection)
+    gl.uniformMatrix4fv(program.viewMatrixUniform, false, view)
+    gl.uniformMatrix4fv(program.modelMatrixUniform, false, model)
+
+    gl.uniform3f(program.objectColorUniform, 1, 1, 1)
+    gl.uniform3f(program.objectPositionUniform, 0, 0, 0)
+    gl.uniform1f(program.objectRadiusUniform, 10)
+    gl.drawArrays(gl.POINTS, 0, 1)
   }
 
 }
