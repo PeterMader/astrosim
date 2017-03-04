@@ -19,6 +19,7 @@ const animation = module.exports = ASTRO.animation = {
   textCtx: null,
 
   frames: 0, // frames counter
+  framesPerSecond: 0,
   traceFrequency: 10,
 
   shouldRender: true,

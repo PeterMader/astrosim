@@ -46,13 +46,15 @@ animation.renderControls = function () {
   ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
   ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
   ctx.fillText(`Ticks: ${content.ticks.toExponential(1)}`, canvas.width - 20, 60)
+  const fps = Math.round(animation.frames / 3 / content.realTime)
+  ctx.fillText(`FPS: ${isNaN(fps) ? 0 : fps}`, canvas.width - 20, 80)
 
   if (animation.dragging) {
     ctx.fillStyle = '#000000'
-    ctx.fillRect(canvas.width / 2 - 100, 64, 200, 22)
+    ctx.fillRect(canvas.width / 2 - 100, 84, 200, 22)
     ctx.fillStyle = '#FFFFFF'
     ctx.textAlign = 'center'
-    ctx.fillText(`Click to select a position or hit X to return.`, canvas.width / 2, 80)
+    ctx.fillText(`Click to select a position or hit X to return.`, canvas.width / 2, 100)
   }
 }
 
