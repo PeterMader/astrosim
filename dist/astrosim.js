@@ -1618,10 +1618,10 @@ const MultiUnitInput = require('./multi-unit-input.js')
 module.exports = class LengthInput extends MultiUnitInput {
 
   constructor (wrapperElement, name, initialValue) {
-    super(wrapperElement, name, initialValue, 'm', 1)
-    this.addUnit('AU',  1.495978707e11)
-    this.addUnit('ly',  9.4607e15)
-    this.addUnit('pc', 3.0857e16)
+    super(wrapperElement, name, initialValue, 'm', 1, 'meter')
+    this.addUnit('AU',  1.495978707e11, 'astronomical unit')
+    this.addUnit('ly',  9.4607e15, 'light year')
+    this.addUnit('pc', 3.0857e16, 'parsec')
   }
 
 }
@@ -1632,8 +1632,8 @@ const MultiUnitInput = require('./multi-unit-input.js')
 module.exports = class MassInput extends MultiUnitInput {
 
   constructor (wrapperElement, name, initialValue) {
-    super(wrapperElement, name, initialValue, 'kg', 1)
-    this.addUnit('solar mass', 1.98855e30)
+    super(wrapperElement, name, initialValue, 'kg', 1, 'kilogram')
+    this.addUnit('solar mass', 1.98855e30, 'proportion of solar mass')
     this.buttons['solar mass'].innerHTML = 'M<span class="sub">\u2609</span>'
   }
 
@@ -1652,7 +1652,7 @@ module.exports = class MassInput extends MultiUnitInput {
 },{"./multi-unit-input.js":27}],27:[function(require,module,exports){
 module.exports = class MultiUnitInput {
 
-  constructor (wrapperElement, name, initialValue, initialUnit, initialRatio) {
+  constructor (wrapperElement, name, initialValue, initialUnit, initialRatio, initialTitle) {
     this.units = {}
     this.buttons = {}
     this._unit = initialUnit
@@ -1662,7 +1662,7 @@ module.exports = class MultiUnitInput {
     this.name = input.name = name
     wrapperElement.appendChild(input)
 
-    this.addUnit(initialUnit, initialRatio)
+    this.addUnit(initialUnit, initialRatio, initialTitle)
     this.value = initialValue
     this.setUnit(initialUnit)
   }
@@ -1675,13 +1675,16 @@ module.exports = class MultiUnitInput {
     this._inputElement.value = (newVal / this.units[this._unit]).toExponential(3)
   }
 
-  addUnit (name, ratio) {
+  addUnit (name, ratio, title) {
     this.units[name] = ratio
 
     const pushButton = document.createElement('button')
     pushButton.textContent = name
     pushButton.classList.add('unit-push-button')
     pushButton.addEventListener('click', this.setUnit.bind(this, name))
+    if (title) {
+      pushButton.title = title
+    }
     this.buttons[name] = pushButton
     this.wrapperElement.appendChild(pushButton)
   }
@@ -2046,9 +2049,9 @@ const MultiUnitInput = require('./multi-unit-input.js')
 module.exports = class VelocityInput extends MultiUnitInput {
 
   constructor (wrapperElement, name, initialValue) {
-    super(wrapperElement, name, initialValue, 'm/s', 1)
-    this.addUnit('km/h', 1/3.6)
-    this.addUnit('c',  2.99792458e8)
+    super(wrapperElement, name, initialValue, 'm/s', 1, 'meter per second')
+    this.addUnit('km/h', 1/3.6, 'kilometer per hour')
+    this.addUnit('c',  2.99792458e8, 'proportion of speed of light')
   }
 
 }

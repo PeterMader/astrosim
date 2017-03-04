@@ -1,6 +1,6 @@
 module.exports = class MultiUnitInput {
 
-  constructor (wrapperElement, name, initialValue, initialUnit, initialRatio) {
+  constructor (wrapperElement, name, initialValue, initialUnit, initialRatio, initialTitle) {
     this.units = {}
     this.buttons = {}
     this._unit = initialUnit
@@ -10,7 +10,7 @@ module.exports = class MultiUnitInput {
     this.name = input.name = name
     wrapperElement.appendChild(input)
 
-    this.addUnit(initialUnit, initialRatio)
+    this.addUnit(initialUnit, initialRatio, initialTitle)
     this.value = initialValue
     this.setUnit(initialUnit)
   }
@@ -23,13 +23,16 @@ module.exports = class MultiUnitInput {
     this._inputElement.value = (newVal / this.units[this._unit]).toExponential(3)
   }
 
-  addUnit (name, ratio) {
+  addUnit (name, ratio, title) {
     this.units[name] = ratio
 
     const pushButton = document.createElement('button')
     pushButton.textContent = name
     pushButton.classList.add('unit-push-button')
     pushButton.addEventListener('click', this.setUnit.bind(this, name))
+    if (title) {
+      pushButton.title = title
+    }
     this.buttons[name] = pushButton
     this.wrapperElement.appendChild(pushButton)
   }
