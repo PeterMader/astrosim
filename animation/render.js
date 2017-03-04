@@ -5,14 +5,15 @@ const ui = require('../ui/ui.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.drawCircle = function (x, y, radius, color) {
-  const {ctx} = this
-  ctx.fillStyle = color
+  const {canvas, ctx} = this
 
-  // deactivate subpixel-rendering by rounding the coordinates
-  const xInt = (x + 0.5) | 0
-  const yInt = (y + 0.5) | 0
+  if (x - radius > canvas.width || x + radius < 0 || y - radius > canvas.height || y + radius < 0) {
+    // circle is out of viewport bounds
+    return
+  }
 
   // draw the circle shape and fill it
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(x, y - radius)
 
@@ -40,7 +41,7 @@ animation.renderControls = function () {
   const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
   ctx.textAlign = 'center'
-  ctx.fillText(width, canvas.width - unit / 2 - 20, canvas.height - 40)
+  ctx.fillText(width + 'm', canvas.width - unit / 2 - 20, canvas.height - 40)
 
   // draw the time stats
   ctx.textAlign = 'right'
