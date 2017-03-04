@@ -4,7 +4,7 @@ const dialogManager = require('../ui/dialogs/dialog-manager.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
-  const {canvas} = this
+  const canvas = animation.textCanvas
 
   window.addEventListener('resize', () => {
     animation.adjust()

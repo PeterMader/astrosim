@@ -15,7 +15,9 @@ const animation = module.exports = ASTRO.animation = {
   width: 0,
   height: 0,
   canvas: null,
+  textCanvas: null,
   ctx: null,
+  textCtx: null,
 
   frames: 0, // frames counter
   traceFrequency: 10,
@@ -35,17 +37,26 @@ const animation = module.exports = ASTRO.animation = {
   mouseHeld: false,
 
   animationLoop: new Loop(() => {
-    if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
+    if (animation.shouldRender) {
       // draw all the objects
       animation.render()
+      animation.renderControls()
       animation.shouldRender = false
+    } else if (mainLoop.running) {
+      if (animation.frames % 3 === 0) {
+        // draw all the objects
+        animation.render()
+      }
+      if (animation.frames % 30 === 0) {
+        animation.renderControls()
+      }
+      animation.frames += 1
     }
-    animation.frames += 1
   }),
 
   adjust () {
-    this.width = this.canvas.width = window.innerWidth
-    this.height = this.canvas.height = window.innerHeight
+    this.width = this.canvas.width = this.textCanvas.width = window.innerWidth
+    this.height = this.canvas.height = this.textCanvas.height = window.innerHeight
     this.translation[0] = 0
     this.translation[1] = 0
     this.ratio = 1
@@ -53,9 +64,11 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
+    const textCanvas = this.textCanvas = document.getElementById('text-canvas')
     this.ctx = canvas.getContext('2d', {
       alpha: false // since the alpha channel is not used, this will speed up drawing
     })
+    this.textCtx = textCanvas.getContext('2d')
     this.adjust()
     ui = require('../ui/ui.js')
 
@@ -143,7 +156,7 @@ const dialogManager = require('../ui/dialogs/dialog-manager.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
-  const {canvas} = this
+  const canvas = animation.textCanvas
 
   window.addEventListener('resize', () => {
     animation.adjust()
@@ -334,18 +347,16 @@ animation.drawCircle = function (x, y, radius, color) {
 }
 
 animation.renderControls = function () {
-  const {translation, ratio, canvas, ctx} = this
+  const {translation, ratio} = this
+  const canvas = this.textCanvas
+  const ctx = this.textCtx
 
-  // draw the center point
-  const x = translation[0] + canvas.width / 2
-  const y = translation[1] + canvas.height / 2
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.beginPath()
-  ctx.moveTo(x, y - 10)
-  ctx.lineTo(x, y + 10)
-  ctx.moveTo(x - 10, y)
-  ctx.lineTo(x + 10, y)
-  ctx.stroke()
+  // clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (!animation.drawControls) {
+    return
+  }
 
   // draw the unit
   ctx.fillStyle = '#FFFFFF'
@@ -371,7 +382,7 @@ animation.renderControls = function () {
 }
 
 animation.render = function () {
-  const {ctx, canvas} = this
+  const {ctx, canvas, translation} = this
   const {objects} = content
 
   // clear the canvas
@@ -468,7 +479,17 @@ animation.render = function () {
   }
 
   if (animation.drawControls) {
-    this.renderControls()
+    // draw the center point
+    const x = translation[0] + canvas.width / 2
+    const y = translation[1] + canvas.height / 2
+    ctx.strokeStyle = '#FFFFFF'
+    ctx.beginPath()
+    ctx.moveTo(x, y - 10)
+    ctx.lineTo(x, y + 10)
+    ctx.moveTo(x - 10, y)
+    ctx.lineTo(x + 10, y)
+    ctx.stroke()
+    return
   }
 }
 
@@ -2068,8 +2089,6 @@ const Serializer = require('../serialization/serializer.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
-  const sideBar = document.getElementById('side-bar')
-
   // events for the buttons
   document.getElementById('serialize-button').addEventListener('click', () => {
     const data = Serializer.createData()
@@ -2082,12 +2101,8 @@ module.exports = function () {
       ui.unpause()
     }
   })
-  document.getElementById('open-new-object-dialog').addEventListener('click', () => {
-    this.dialogs.newObjectDialog.open()
-  })
-  document.getElementById('open-about').addEventListener('click', () => {
-    this.dialogs.aboutDialog.open()
-  })
+  document.getElementById('open-new-object-dialog').addEventListener('click', this.dialogs.newObjectDialog.open.bind(this.dialogs.newObjectDialog))
+  document.getElementById('open-about').addEventListener('click', this.dialogs.aboutDialog.open.bind(this.dialogs.aboutDialog))
   document.getElementById('open-details').addEventListener('click', () => {
     ui.updateHistory()
     this.dialogs.detailsDialog.open()
@@ -2099,34 +2114,22 @@ module.exports = function () {
     animation.shouldRender = true
     this.dialogs.objectDialog.close()
   })
-  document.getElementById('object-cancel').addEventListener('click', () => {
-    this.dialogs.objectDialog.close()
-  })
-  document.getElementById('new-object-cancel').addEventListener('click', () => {
-    this.dialogs.newObjectDialog.close()
-  })
+  document.getElementById('object-cancel').addEventListener('click', this.dialogs.objectDialog.close.bind(this.dialogs.objectDialog))
+  document.getElementById('new-object-cancel').addEventListener('click', this.dialogs.newObjectDialog.close.bind(this.dialogs.newObjectDialog))
   document.getElementById('open-settings-dialog').addEventListener('click', () => {
     const {settingsDialog} = this.dialogs
     settingsDialog.setValues()
     settingsDialog.open()
   })
-  document.getElementById('open-scene').addEventListener('click', () => {
-    this.dialogs.sceneDialog.open()
-  })
+  document.getElementById('open-scene').addEventListener('click', this.dialogs.sceneDialog.open.bind(this.dialogs.sceneDialog))
   document.getElementById('cancel-scene').addEventListener('click', () => {
     this.dialogs.sceneDialog.hideError()
     this.dialogs.sceneDialog.close()
   })
-  document.getElementById('settings-cancel').addEventListener('click', () => {
-    this.dialogs.settingsDialog.close()
-  })
+  document.getElementById('settings-cancel').addEventListener('click', this.dialogs.settingsDialog.close.bind(this.dialogs.settingsDialog))
 
-  document.getElementById('open-side-bar').addEventListener('click', () => {
-    sideBar.classList.remove('side-bar-closed')
-  })
-  document.getElementById('close-side-bar').addEventListener('click', () => {
-    sideBar.classList.add('side-bar-closed')
-  })
+  document.getElementById('open-side-bar').addEventListener('click', ui.openSideBar.bind(ui))
+  document.getElementById('close-side-bar').addEventListener('click', ui.closeSideBar.bind(ui))
 
   ui.keyboard.on('Enter', () => {
     if (ui.dialogs.openDialog) {
@@ -2140,7 +2143,26 @@ module.exports = function () {
     }
   })
 
-  ui.keyboard.on('n', () => {
+  ui.keyboard.on('keyup', (e) => {
+    if (ui.dialogs.openDialog) {
+      return
+    }
+    let key = Number(e.key)
+    if (key === 0) {
+      key = 10
+    }
+    if (key > 0 && key < 11) {
+      if (content.objects[key - 1]) {
+        if (!ui.keyboard.isKeyPressed('o')) {
+          ui.addObjectToSelection(content.objects[key - 1])
+        } else {
+          ui.openEditObject(content.objects[key - 1])
+        }
+      }
+    }
+  })
+
+  ui.keyboard.on('a', () => {
     if (!ui.dialogs.openDialog) {
       ui.dialogs.newObjectDialog.open()
     }
@@ -2149,6 +2171,13 @@ module.exports = function () {
   ui.keyboard.on('s', () => {
     if (!ui.dialogs.openDialog) {
       ui.dialogs.sceneDialog.open()
+    }
+  })
+
+  ui.keyboard.on('q', (e) => {
+    if (!ui.dialogs.openDialog) {
+      ui.selectedObjects = []
+      ui.updateSelection()
     }
   })
 
@@ -2162,12 +2191,16 @@ module.exports = function () {
     if (animation.dragging && ui.dialogs.openDialog) {
       animation.dragging = false
       ui.dialogs.openDialog.show()
-      return
     }
-    if (ui.dialogs.openDialog && document.activeElement === document.body) {
+  })
+
+  ui.keyboard.on('Escape', () => {
+    if (ui.dialogs.openDialog) {
       ui.dialogs.openDialog.close()
     }
   })
+
+  ui.keyboard.on('n', ui.toggleSideBar.bind(ui))
 
   ui.keyboard.on('m', () => {
     if (!ui.dialogs.openDialog) {
@@ -2223,15 +2256,18 @@ const ui = module.exports = ASTRO.ui = {
   dialogs: require('./dialogs/dialog-manager.js'),
   keyboard: new Keyboard(),
 
+  sideBar: null,
+
   initialize () {
     this.list = document.getElementById('object-list')
     this.historyTable = document.getElementById('history')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
+    this.sideBar = document.getElementById('side-bar')
 
     content = require('../content/content.js')
 
-    require('./event-listeners.js').call(this)
     this.dialogs.initialize()
+    require('./event-listeners.js').call(this)
   },
   update () {
     let index
@@ -2258,30 +2294,11 @@ const ui = module.exports = ASTRO.ui = {
 
       const optionsButton = document.createElement('button')
       optionsButton.classList.add('edit-button')
-      optionsButton.addEventListener('click', () => {
-        // open properties dialog
-        content.editedObject = object
-        const {objectDialog} = this.dialogs
-        objectDialog.setValues()
-        objectDialog.open()
-      })
+      optionsButton.addEventListener('click', ui.openEditObject.bind(ui, object))
 
       const centerButton = document.createElement('button')
       centerButton.classList.add('center-button')
-      centerButton.addEventListener('click', () => {
-        // add object to selection
-        const {selectedObjects} = ui
-        let selectionIndex
-        if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
-          selectedObjects.splice(selectionIndex, 1)
-          item.classList.remove('selected-object')
-        } else {
-          selectedObjects.push(object)
-          item.classList.add('selected-object')
-        }
-
-        animation.shouldRender = true
-      })
+      centerButton.addEventListener('click', ui.addObjectToSelection.bind(ui, object))
 
       const buttonWrapper = document.createElement('div')
       buttonWrapper.appendChild(optionsButton)
@@ -2295,9 +2312,31 @@ const ui = module.exports = ASTRO.ui = {
     this.updateSelection()
   },
 
+  addObjectToSelection (object) {
+    // add object to selection
+    const {selectedObjects} = this
+    let selectionIndex
+    if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
+      selectedObjects.splice(selectionIndex, 1)
+    } else {
+      selectedObjects.push(object)
+    }
+    this.updateSelection()
+
+    animation.shouldRender = true
+  },
+
+  openEditObject (object) {
+    // open properties dialog
+    content.editedObject = object
+    const {objectDialog} = this.dialogs
+    objectDialog.setValues()
+    objectDialog.open()
+  },
+
   updateSelection () {
     const selection = ui.selectedObjects
-    const selectionIndices = selection.map((object, index) => index)
+    const selectionIndices = selection.map((object, index) => object.id)
     const {list} = this
     const children = Array.prototype.slice.call(list.children)
     const {length} = children
@@ -2336,10 +2375,7 @@ const ui = module.exports = ASTRO.ui = {
       const selectButton = document.createElement('span')
       selectButton.classList.add('details-list-item-before')
       selectButton.style.backgroundColor = object.color.hexString()
-      selectButton.addEventListener('click', () => {
-        ui.historyObject = object
-        ui.updateHistoryValues()
-      })
+      selectButton.addEventListener('click', ui.updateHistoryValues.bind(ui, object))
       const name = document.createElement('span')
       name.textContent = object.name
 
@@ -2352,8 +2388,7 @@ const ui = module.exports = ASTRO.ui = {
     this.updateHistoryValues()
   },
 
-  updateHistoryValues () {
-    const object = this.historyObject
+  updateHistoryValues (object) {
     const {objects} = content
 
     if (!object) {
@@ -2402,6 +2437,19 @@ const ui = module.exports = ASTRO.ui = {
     this.togglePauseButton.textContent = 'Pause'
     this.togglePauseButton.classList.remove('play-button')
     this.togglePauseButton.classList.add('pause-button')
+  },
+  openSideBar () {
+    this.sideBar.classList.remove('side-bar-closed')
+  },
+  closeSideBar () {
+    this.sideBar.classList.add('side-bar-closed')
+  },
+  toggleSideBar () {
+    if (this.sideBar.classList.contains('side-bar-closed')) {
+      this.sideBar.classList.remove('side-bar-closed')
+    } else {
+      this.sideBar.classList.add('side-bar-closed')
+    }
   }
 
 }

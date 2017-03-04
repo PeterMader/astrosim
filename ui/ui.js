@@ -14,15 +14,18 @@ const ui = module.exports = ASTRO.ui = {
   dialogs: require('./dialogs/dialog-manager.js'),
   keyboard: new Keyboard(),
 
+  sideBar: null,
+
   initialize () {
     this.list = document.getElementById('object-list')
     this.historyTable = document.getElementById('history')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
+    this.sideBar = document.getElementById('side-bar')
 
     content = require('../content/content.js')
 
-    require('./event-listeners.js').call(this)
     this.dialogs.initialize()
+    require('./event-listeners.js').call(this)
   },
   update () {
     let index
@@ -49,30 +52,11 @@ const ui = module.exports = ASTRO.ui = {
 
       const optionsButton = document.createElement('button')
       optionsButton.classList.add('edit-button')
-      optionsButton.addEventListener('click', () => {
-        // open properties dialog
-        content.editedObject = object
-        const {objectDialog} = this.dialogs
-        objectDialog.setValues()
-        objectDialog.open()
-      })
+      optionsButton.addEventListener('click', ui.openEditObject.bind(ui, object))
 
       const centerButton = document.createElement('button')
       centerButton.classList.add('center-button')
-      centerButton.addEventListener('click', () => {
-        // add object to selection
-        const {selectedObjects} = ui
-        let selectionIndex
-        if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
-          selectedObjects.splice(selectionIndex, 1)
-          item.classList.remove('selected-object')
-        } else {
-          selectedObjects.push(object)
-          item.classList.add('selected-object')
-        }
-
-        animation.shouldRender = true
-      })
+      centerButton.addEventListener('click', ui.addObjectToSelection.bind(ui, object))
 
       const buttonWrapper = document.createElement('div')
       buttonWrapper.appendChild(optionsButton)
@@ -86,9 +70,31 @@ const ui = module.exports = ASTRO.ui = {
     this.updateSelection()
   },
 
+  addObjectToSelection (object) {
+    // add object to selection
+    const {selectedObjects} = this
+    let selectionIndex
+    if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
+      selectedObjects.splice(selectionIndex, 1)
+    } else {
+      selectedObjects.push(object)
+    }
+    this.updateSelection()
+
+    animation.shouldRender = true
+  },
+
+  openEditObject (object) {
+    // open properties dialog
+    content.editedObject = object
+    const {objectDialog} = this.dialogs
+    objectDialog.setValues()
+    objectDialog.open()
+  },
+
   updateSelection () {
     const selection = ui.selectedObjects
-    const selectionIndices = selection.map((object, index) => index)
+    const selectionIndices = selection.map((object, index) => object.id)
     const {list} = this
     const children = Array.prototype.slice.call(list.children)
     const {length} = children
@@ -127,10 +133,7 @@ const ui = module.exports = ASTRO.ui = {
       const selectButton = document.createElement('span')
       selectButton.classList.add('details-list-item-before')
       selectButton.style.backgroundColor = object.color.hexString()
-      selectButton.addEventListener('click', () => {
-        ui.historyObject = object
-        ui.updateHistoryValues()
-      })
+      selectButton.addEventListener('click', ui.updateHistoryValues.bind(ui, object))
       const name = document.createElement('span')
       name.textContent = object.name
 
@@ -143,8 +146,7 @@ const ui = module.exports = ASTRO.ui = {
     this.updateHistoryValues()
   },
 
-  updateHistoryValues () {
-    const object = this.historyObject
+  updateHistoryValues (object) {
     const {objects} = content
 
     if (!object) {
@@ -193,6 +195,19 @@ const ui = module.exports = ASTRO.ui = {
     this.togglePauseButton.textContent = 'Pause'
     this.togglePauseButton.classList.remove('play-button')
     this.togglePauseButton.classList.add('pause-button')
+  },
+  openSideBar () {
+    this.sideBar.classList.remove('side-bar-closed')
+  },
+  closeSideBar () {
+    this.sideBar.classList.add('side-bar-closed')
+  },
+  toggleSideBar () {
+    if (this.sideBar.classList.contains('side-bar-closed')) {
+      this.sideBar.classList.remove('side-bar-closed')
+    } else {
+      this.sideBar.classList.add('side-bar-closed')
+    }
   }
 
 }

@@ -22,18 +22,16 @@ animation.drawCircle = function (x, y, radius, color) {
 }
 
 animation.renderControls = function () {
-  const {translation, ratio, canvas, ctx} = this
+  const {translation, ratio} = this
+  const canvas = this.textCanvas
+  const ctx = this.textCtx
 
-  // draw the center point
-  const x = translation[0] + canvas.width / 2
-  const y = translation[1] + canvas.height / 2
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.beginPath()
-  ctx.moveTo(x, y - 10)
-  ctx.lineTo(x, y + 10)
-  ctx.moveTo(x - 10, y)
-  ctx.lineTo(x + 10, y)
-  ctx.stroke()
+  // clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (!animation.drawControls) {
+    return
+  }
 
   // draw the unit
   ctx.fillStyle = '#FFFFFF'
@@ -59,7 +57,7 @@ animation.renderControls = function () {
 }
 
 animation.render = function () {
-  const {ctx, canvas} = this
+  const {ctx, canvas, translation} = this
   const {objects} = content
 
   // clear the canvas
@@ -156,6 +154,16 @@ animation.render = function () {
   }
 
   if (animation.drawControls) {
-    this.renderControls()
+    // draw the center point
+    const x = translation[0] + canvas.width / 2
+    const y = translation[1] + canvas.height / 2
+    ctx.strokeStyle = '#FFFFFF'
+    ctx.beginPath()
+    ctx.moveTo(x, y - 10)
+    ctx.lineTo(x, y + 10)
+    ctx.moveTo(x - 10, y)
+    ctx.lineTo(x + 10, y)
+    ctx.stroke()
+    return
   }
 }

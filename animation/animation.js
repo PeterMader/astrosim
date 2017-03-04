@@ -14,7 +14,9 @@ const animation = module.exports = ASTRO.animation = {
   width: 0,
   height: 0,
   canvas: null,
+  textCanvas: null,
   ctx: null,
+  textCtx: null,
 
   frames: 0, // frames counter
   traceFrequency: 10,
@@ -34,17 +36,26 @@ const animation = module.exports = ASTRO.animation = {
   mouseHeld: false,
 
   animationLoop: new Loop(() => {
-    if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
+    if (animation.shouldRender) {
       // draw all the objects
       animation.render()
+      animation.renderControls()
       animation.shouldRender = false
+    } else if (mainLoop.running) {
+      if (animation.frames % 3 === 0) {
+        // draw all the objects
+        animation.render()
+      }
+      if (animation.frames % 30 === 0) {
+        animation.renderControls()
+      }
+      animation.frames += 1
     }
-    animation.frames += 1
   }),
 
   adjust () {
-    this.width = this.canvas.width = window.innerWidth
-    this.height = this.canvas.height = window.innerHeight
+    this.width = this.canvas.width = this.textCanvas.width = window.innerWidth
+    this.height = this.canvas.height = this.textCanvas.height = window.innerHeight
     this.translation[0] = 0
     this.translation[1] = 0
     this.ratio = 1
@@ -52,9 +63,11 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
+    const textCanvas = this.textCanvas = document.getElementById('text-canvas')
     this.ctx = canvas.getContext('2d', {
       alpha: false // since the alpha channel is not used, this will speed up drawing
     })
+    this.textCtx = textCanvas.getContext('2d')
     this.adjust()
     ui = require('../ui/ui.js')
 
