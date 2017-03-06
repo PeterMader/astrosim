@@ -17,4 +17,4 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.ui.initialize()
 
   ASTRO.mainLoop.start()
-})
+}, {passive: true})

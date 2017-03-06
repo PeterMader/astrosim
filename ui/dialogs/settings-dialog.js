@@ -25,10 +25,6 @@ settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFact
 settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
-settingsDialog.on('open', () => {
-  translationX.focus()
-})
-
 settingsDialog.on('drag-end', () => {
   // convert cursor position into simulation position
   translationX.value = (animation.translation[0] + animation.draggingPositionEnd[0] - animation.canvas.width / 2).toExponential(3)

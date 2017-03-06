@@ -1488,7 +1488,11 @@ const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
 
-document.getElementById('about-submit').addEventListener('click', () => {
+const closeButton = document.getElementById('about-submit')
+
+aboutDialog.on('open', closeButton.focus.bind(closeButton))
+
+closeButton.addEventListener('click', () => {
   aboutDialog.close()
 })
 
@@ -1710,6 +1714,7 @@ module.exports = class MultiUnitInput {
     pushButton.textContent = name
     pushButton.classList.add('unit-push-button')
     pushButton.addEventListener('click', this.setUnit.bind(this, name))
+    pushButton.setAttribute("tabindex", "-1")
     if (title) {
       pushButton.title = title
     }
@@ -1759,10 +1764,6 @@ const color = document.getElementById('new-object-color')
 
 // set the filter logic of the input elements
 newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
-
-newObjectDialog.on('open', () => {
-  name.focus()
-})
 
 newObjectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
@@ -1830,10 +1831,6 @@ const color = document.getElementById('object-color')
 
 // set the filter logic of the input elements
 objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
-
-objectDialog.on('open', () => {
-  name.focus()
-})
 
 objectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
@@ -1996,10 +1993,6 @@ settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFact
 settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
-settingsDialog.on('open', () => {
-  translationX.focus()
-})
-
 settingsDialog.on('drag-end', () => {
   // convert cursor position into simulation position
   translationX.value = (animation.translation[0] + animation.draggingPositionEnd[0] - animation.canvas.width / 2).toExponential(3)
@@ -2132,18 +2125,31 @@ module.exports = function () {
   })
   document.getElementById('settings-cancel').addEventListener('click', this.dialogs.settingsDialog.close.bind(this.dialogs.settingsDialog))
 
-  document.getElementById('open-side-bar').addEventListener('click', ui.openSideBar.bind(ui))
-  document.getElementById('close-side-bar').addEventListener('click', ui.closeSideBar.bind(ui))
+  const openSideBarButton = document.getElementById('open-side-bar')
+  openSideBarButton.addEventListener('click', ui.openSideBar.bind(ui))
+  document.getElementById('close-side-bar').addEventListener('click', () => {
+    ui.closeSideBar()
+    openSideBarButton.focus()
+  })
 
   ui.keyboard.on('Enter', () => {
     if (ui.dialogs.openDialog) {
       ui.dialogs.openDialog.submit()
-    } else {
+    } else if (document.activeElement === document.body) {
+      // no element has the focus
       if (mainLoop.running) {
         ui.pause()
       } else {
         ui.unpause()
       }
+    }
+  })
+
+  ui.keyboard.on('i', () => {
+    if (mainLoop.running) {
+      ui.pause()
+    } else {
+      ui.unpause()
     }
   })
 

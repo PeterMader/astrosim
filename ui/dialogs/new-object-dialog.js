@@ -24,10 +24,6 @@ const color = document.getElementById('new-object-color')
 // set the filter logic of the input elements
 newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
 
-newObjectDialog.on('open', () => {
-  name.focus()
-})
-
 newObjectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
   positionX.value = (animation.draggingPositionStart[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio

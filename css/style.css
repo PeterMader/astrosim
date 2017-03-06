@@ -47,10 +47,17 @@ a:hover {
   width: 32px;
 }
 
-div.icon-before {
+.icon-before {
   padding-left: 30px;
   background-image: url('../res/sprite.png');
   background-repeat: no-repeat;
+}
+
+#close-side-bar {
+  /* reset button styles */
+  padding: 0;
+  background-color: transparent;
+  margin: 0;
 }
 
 #center-viewport, .drag-button {
@@ -304,7 +311,7 @@ input:focus {
   font-size: 90%;
 }
 
-.main-button:hover {
+.main-button:hover, .main-button:focus {
   color: #000000;
 }
 

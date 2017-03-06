@@ -1,7 +1,8 @@
 ## AstroSim hotkeys
 * Arrow keys to translate the viewport (hold **shift** to decrease the translation)
 * **+** and **-** to zoom in or out (hold **shift** to decrease the zoom factor)
-* **Enter** to toggle the play state of the simulation. If there is an open dialog, this dialog is submitted.
+* **Enter** to toggle the play state of the simulation (this only works if no element has the focus). If there is an open dialog, this dialog is submitted.
+* **I** to toggle the play state of the simulation.
 * **L** to toggle object labels ['L' for 'labels'].
 * **C** to toggle controls ['C' for 'controls'].
 * **T** to toggle object trails ['T' for 'trails'].

@@ -30,6 +30,7 @@ module.exports = class MultiUnitInput {
     pushButton.textContent = name
     pushButton.classList.add('unit-push-button')
     pushButton.addEventListener('click', this.setUnit.bind(this, name))
+    pushButton.setAttribute("tabindex", "-1")
     if (title) {
       pushButton.title = title
     }

@@ -44,18 +44,31 @@ module.exports = function () {
   })
   document.getElementById('settings-cancel').addEventListener('click', this.dialogs.settingsDialog.close.bind(this.dialogs.settingsDialog))
 
-  document.getElementById('open-side-bar').addEventListener('click', ui.openSideBar.bind(ui))
-  document.getElementById('close-side-bar').addEventListener('click', ui.closeSideBar.bind(ui))
+  const openSideBarButton = document.getElementById('open-side-bar')
+  openSideBarButton.addEventListener('click', ui.openSideBar.bind(ui))
+  document.getElementById('close-side-bar').addEventListener('click', () => {
+    ui.closeSideBar()
+    openSideBarButton.focus()
+  })
 
   ui.keyboard.on('Enter', () => {
     if (ui.dialogs.openDialog) {
       ui.dialogs.openDialog.submit()
-    } else {
+    } else if (document.activeElement === document.body) {
+      // no element has the focus
       if (mainLoop.running) {
         ui.pause()
       } else {
         ui.unpause()
       }
+    }
+  })
+
+  ui.keyboard.on('i', () => {
+    if (mainLoop.running) {
+      ui.pause()
+    } else {
+      ui.unpause()
     }
   })
 

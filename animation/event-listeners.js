@@ -8,7 +8,7 @@ module.exports = function () {
 
   window.addEventListener('resize', () => {
     animation.adjust()
-  })
+  }, {passive: true})
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
@@ -17,7 +17,7 @@ module.exports = function () {
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
     animation.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
-  })
+  }, {passive: true})
 
   // events for the canvas translation
   let startX = 0, startY = 0
@@ -33,7 +33,8 @@ module.exports = function () {
     startX = e.clientX
     startY = e.clientY
     document.body.position = 'fixed'
-  })
+  }, {passive: true})
+
   canvas.addEventListener('mousemove', (e) => {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
@@ -72,17 +73,17 @@ module.exports = function () {
     document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
-  })
+  }, {passive: true})
 
   canvas.addEventListener('mouseup', (e) => {
     if (animation.dragging && dialogManager.openDialog) {
       dialogManager.openDialog.emit('drag-end')
     }
-  })
+  }, {passive: true})
 
   document.body.addEventListener('mouseup', () => {
     animation.mouseHeld = false
-  })
+  }, {passive: true})
 
   ui.keyboard.on('keyup', (e) => {
     if (!dialogManager.openDialog) {

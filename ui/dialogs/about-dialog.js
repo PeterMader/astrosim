@@ -2,6 +2,10 @@ const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
 
-document.getElementById('about-submit').addEventListener('click', () => {
+const closeButton = document.getElementById('about-submit')
+
+aboutDialog.on('open', closeButton.focus.bind(closeButton))
+
+closeButton.addEventListener('click', () => {
   aboutDialog.close()
 })
