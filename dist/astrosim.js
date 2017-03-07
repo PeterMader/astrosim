@@ -161,7 +161,7 @@ module.exports = function () {
 
   window.addEventListener('resize', () => {
     animation.adjust()
-  })
+  }, {passive: true})
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
@@ -170,7 +170,7 @@ module.exports = function () {
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
     animation.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
-  })
+  }, {passive: true})
 
   // events for the canvas translation
   let startX = 0, startY = 0
@@ -186,7 +186,30 @@ module.exports = function () {
     startX = e.clientX
     startY = e.clientY
     document.body.position = 'fixed'
+  }, {passive: true})
+
+  canvas.addEventListener('touchstart', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mousedown', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
   })
+
+  canvas.addEventListener('touchmove', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
+  })
+
+  canvas.addEventListener('touchend', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
+  canvas.addEventListener('touchcancel', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
   canvas.addEventListener('mousemove', (e) => {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
@@ -225,17 +248,17 @@ module.exports = function () {
     document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
-  })
+  }, {passive: true})
 
   canvas.addEventListener('mouseup', (e) => {
     if (animation.dragging && dialogManager.openDialog) {
       dialogManager.openDialog.emit('drag-end')
     }
-  })
+  }, {passive: true})
 
   document.body.addEventListener('mouseup', () => {
     animation.mouseHeld = false
-  })
+  }, {passive: true})
 
   ui.keyboard.on('keyup', (e) => {
     if (!dialogManager.openDialog) {
@@ -561,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.ui.initialize()
 
   ASTRO.mainLoop.start()
-})
+}, {passive: true})
 
 },{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":36}],8:[function(require,module,exports){
 const Color = require('../animation/color.js')
@@ -2090,47 +2113,47 @@ module.exports = function () {
   document.getElementById('serialize-button').addEventListener('click', () => {
     const data = Serializer.createData()
     Serializer.serialize(data)
-  })
+  }, {passive: true})
   this.togglePauseButton.addEventListener('click', () => {
     if (mainLoop.running) {
       ui.pause()
     } else {
       ui.unpause()
     }
-  })
-  document.getElementById('open-new-object-dialog').addEventListener('click', this.dialogs.newObjectDialog.open.bind(this.dialogs.newObjectDialog))
-  document.getElementById('open-about').addEventListener('click', this.dialogs.aboutDialog.open.bind(this.dialogs.aboutDialog))
+  }, {passive: true})
+  document.getElementById('open-new-object-dialog').addEventListener('click', this.dialogs.newObjectDialog.open.bind(this.dialogs.newObjectDialog), {passive: true})
+  document.getElementById('open-about').addEventListener('click', this.dialogs.aboutDialog.open.bind(this.dialogs.aboutDialog), {passive: true})
   document.getElementById('open-details').addEventListener('click', () => {
     ui.updateHistory()
     this.dialogs.detailsDialog.open()
-  })
+  }, {passive: true})
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
     content.remove(object)
     this.update()
     animation.shouldRender = true
     this.dialogs.objectDialog.close()
-  })
+  }, {passive: true})
   document.getElementById('object-cancel').addEventListener('click', this.dialogs.objectDialog.close.bind(this.dialogs.objectDialog))
   document.getElementById('new-object-cancel').addEventListener('click', this.dialogs.newObjectDialog.close.bind(this.dialogs.newObjectDialog))
   document.getElementById('open-settings-dialog').addEventListener('click', () => {
     const {settingsDialog} = this.dialogs
     settingsDialog.setValues()
     settingsDialog.open()
-  })
+  }, {passive: true})
   document.getElementById('open-scene').addEventListener('click', this.dialogs.sceneDialog.open.bind(this.dialogs.sceneDialog))
   document.getElementById('cancel-scene').addEventListener('click', () => {
     this.dialogs.sceneDialog.hideError()
     this.dialogs.sceneDialog.close()
-  })
-  document.getElementById('settings-cancel').addEventListener('click', this.dialogs.settingsDialog.close.bind(this.dialogs.settingsDialog))
+  }, {passive: true})
+  document.getElementById('settings-cancel').addEventListener('click', this.dialogs.settingsDialog.close.bind(this.dialogs.settingsDialog), {passive: true})
 
   const openSideBarButton = document.getElementById('open-side-bar')
   openSideBarButton.addEventListener('click', ui.openSideBar.bind(ui))
   document.getElementById('close-side-bar').addEventListener('click', () => {
     ui.closeSideBar()
     openSideBarButton.focus()
-  })
+  }, {passive: true})
 
   ui.keyboard.on('Enter', () => {
     if (ui.dialogs.openDialog) {
@@ -2234,7 +2257,7 @@ module.exports = class Keyboard extends EventEmitter {
     document.addEventListener('keydown', (e) => {
       this.pressedKeys[e.key] = true
       this.emit('keydown', e)
-    })
+    }, {passive: true})
 
     document.addEventListener('keyup', (e) => {
       this.pressedKeys[e.key] = false

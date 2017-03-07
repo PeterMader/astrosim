@@ -35,6 +35,32 @@ module.exports = function () {
     document.body.position = 'fixed'
   }, {passive: true})
 
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mousedown', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
+  })
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
+  })
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
+  canvas.addEventListener('touchcancel', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
   canvas.addEventListener('mousemove', (e) => {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
