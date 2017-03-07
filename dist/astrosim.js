@@ -40,13 +40,10 @@ const animation = module.exports = ASTRO.animation = {
   animationLoop: new Loop(() => {
     if (animation.shouldRender) {
       // draw all the objects
-      console.time('render-frame')
       animation.render()
       animation.renderControls()
-      console.timeEnd('render-frame')
       animation.shouldRender = false
     } else if (mainLoop.running) {
-      console.time('render-frame')
       if (animation.frames % 3 === 0) {
         // draw all the objects
         animation.render()
@@ -54,7 +51,6 @@ const animation = module.exports = ASTRO.animation = {
       if (animation.frames % 30 === 0) {
         animation.renderControls()
       }
-      console.timeEnd('render-frame')
       animation.frames += 1
     }
   }),
