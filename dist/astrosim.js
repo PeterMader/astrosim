@@ -15,9 +15,12 @@ const animation = module.exports = ASTRO.animation = {
   width: 0,
   height: 0,
   canvas: null,
+  textCanvas: null,
   ctx: null,
+  textCtx: null,
 
   frames: 0, // frames counter
+  framesPerSecond: 0,
   traceFrequency: 10,
 
   shouldRender: true,
@@ -26,22 +29,35 @@ const animation = module.exports = ASTRO.animation = {
   drawLabels: false,
 
   dragging: false,
-  draggingPosition: Vec2.create(),
+  draggingPositionStart: Vec2.create(),
+  draggingPositionEnd: Vec2.create(),
   draggingRadius: 1,
+  draggingCenter: false,
   draggingColor: '#FFFFFF',
 
+  mouseHeld: false,
+
   animationLoop: new Loop(() => {
-    if ((mainLoop.running && animation.frames % 3 === 0) || animation.shouldRender) {
+    if (animation.shouldRender) {
       // draw all the objects
       animation.render()
+      animation.renderControls()
       animation.shouldRender = false
+    } else if (mainLoop.running) {
+      if (animation.frames % 3 === 0) {
+        // draw all the objects
+        animation.render()
+      }
+      if (animation.frames % 30 === 0) {
+        animation.renderControls()
+      }
+      animation.frames += 1
     }
-    animation.frames += 1
   }),
 
   adjust () {
-    this.width = this.canvas.width = window.innerWidth
-    this.height = this.canvas.height = window.innerHeight
+    this.width = this.canvas.width = this.textCanvas.width = window.innerWidth
+    this.height = this.canvas.height = this.textCanvas.height = window.innerHeight
     this.translation[0] = 0
     this.translation[1] = 0
     this.ratio = 1
@@ -49,9 +65,11 @@ const animation = module.exports = ASTRO.animation = {
   },
   initialize () {
     const canvas = this.canvas = document.getElementById('canvas')
+    const textCanvas = this.textCanvas = document.getElementById('text-canvas')
     this.ctx = canvas.getContext('2d', {
       alpha: false // since the alpha channel is not used, this will speed up drawing
     })
+    this.textCtx = textCanvas.getContext('2d')
     this.adjust()
     ui = require('../ui/ui.js')
 
@@ -69,7 +87,7 @@ const animation = module.exports = ASTRO.animation = {
   }
 }
 
-},{"../astrosim.js":7,"../content/vec2.js":12,"../ui/ui.js":31,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
+},{"../astrosim.js":7,"../content/vec2.js":12,"../ui/ui.js":36,"./event-listeners.js":3,"./loop.js":4,"./render.js":5,"./transformation.js":6}],2:[function(require,module,exports){
 module.exports = class Color {
   constructor (r, g, b) {
     this.r = Color.getInt(r || 0)
@@ -139,11 +157,11 @@ const dialogManager = require('../ui/dialogs/dialog-manager.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
-  const {canvas} = this
+  const canvas = animation.textCanvas
 
   window.addEventListener('resize', () => {
     animation.adjust()
-  })
+  }, {passive: true})
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
@@ -152,34 +170,77 @@ module.exports = function () {
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
     animation.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
-  })
+  }, {passive: true})
 
   // events for the canvas translation
-  let startX = 0, startY = 0, mouseHeld = false
+  let startX = 0, startY = 0
   canvas.addEventListener('mousedown', (e) => {
-    mouseHeld = true
+    animation.mouseHeld = true
+
+    if (animation.dragging) {
+      animation.draggingPositionStart[0] = e.clientX
+      animation.draggingPositionStart[1] = e.clientY
+      return
+    }
+
     startX = e.clientX
     startY = e.clientY
     document.body.position = 'fixed'
+  }, {passive: true})
+
+  canvas.addEventListener('touchstart', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mousedown', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
   })
+
+  canvas.addEventListener('touchmove', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
+  })
+
+  canvas.addEventListener('touchend', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
+  canvas.addEventListener('touchcancel', (e) => {
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
   canvas.addEventListener('mousemove', (e) => {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
         animation.translate(1, 0)
+        animation.draggingPositionStart[0] -= 1
+        animation.draggingPositionEnd[0] -= 1
       } else if (e.clientX < canvas.width * .05) {
         animation.translate(-1, 0)
+        animation.draggingPositionStart[0] += 1
+        animation.draggingPositionEnd[0] += 1
       } else if (e.clientY > canvas.height * .95) {
         animation.translate(0, 1)
+        animation.draggingPositionStart[1] -= 1
+        animation.draggingPositionEnd[1] -= 1
       } else if (e.clientY < canvas.height * .05) {
         animation.translate(0, -1)
+        animation.draggingPositionStart[1] += 1
+        animation.draggingPositionEnd[1] += 1
       }
-      animation.draggingPosition[0] = e.clientX
-      animation.draggingPosition[1] = e.clientY
+      if (animation.mouseHeld) {
+        animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionEnd[1] = e.clientY
+      } else {
+        animation.draggingPositionStart[0] = animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionStart[1] = animation.draggingPositionEnd[1] = e.clientY
+      }
       animation.shouldRender = true
       return
     }
 
-    if (!mouseHeld) {
+    if (!animation.mouseHeld) {
       return
     }
 
@@ -187,17 +248,17 @@ module.exports = function () {
     document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
-  })
+  }, {passive: true})
 
   canvas.addEventListener('mouseup', (e) => {
     if (animation.dragging && dialogManager.openDialog) {
       dialogManager.openDialog.emit('drag-end')
     }
-  })
+  }, {passive: true})
 
   document.body.addEventListener('mouseup', () => {
-    mouseHeld = false
-  })
+    animation.mouseHeld = false
+  }, {passive: true})
 
   ui.keyboard.on('keyup', (e) => {
     if (!dialogManager.openDialog) {
@@ -227,16 +288,9 @@ module.exports = function () {
       }
     }
   })
-
-  ui.keyboard.on('x', (e) => {
-    if (animation.dragging && ui.dialogs.openDialog) {
-      animation.dragging = false
-      ui.dialogs.openDialog.show()
-    }
-  })
 }
 
-},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":23,"../ui/ui.js":31,"./animation.js":1}],4:[function(require,module,exports){
+},{"../astrosim.js":7,"../ui/dialogs/dialog-manager.js":23,"../ui/ui.js":36,"./animation.js":1}],4:[function(require,module,exports){
 module.exports = class Loop {
   constructor (callback, interval) {
     this.running = false
@@ -300,10 +354,15 @@ const ui = require('../ui/ui.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.drawCircle = function (x, y, radius, color) {
-  const {ctx} = this
-  ctx.fillStyle = color
+  const {canvas, ctx} = this
+
+  if (x - radius > canvas.width || x + radius < 0 || y - radius > canvas.height || y + radius < 0) {
+    // circle is out of viewport bounds
+    return
+  }
 
   // draw the circle shape and fill it
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(x, y - radius)
 
@@ -312,18 +371,16 @@ animation.drawCircle = function (x, y, radius, color) {
 }
 
 animation.renderControls = function () {
-  const {translation, ratio, canvas, ctx} = this
+  const {translation, ratio} = this
+  const canvas = this.textCanvas
+  const ctx = this.textCtx
 
-  // draw the center point
-  const x = translation[0] + canvas.width / 2
-  const y = translation[1] + canvas.height / 2
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.beginPath()
-  ctx.moveTo(x, y - 10)
-  ctx.lineTo(x, y + 10)
-  ctx.moveTo(x - 10, y)
-  ctx.lineTo(x + 10, y)
-  ctx.stroke()
+  // clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (!animation.drawControls) {
+    return
+  }
 
   // draw the unit
   ctx.fillStyle = '#FFFFFF'
@@ -331,16 +388,27 @@ animation.renderControls = function () {
   const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
   ctx.textAlign = 'center'
-  ctx.fillText(width, canvas.width - unit / 2 - 20, canvas.height - 40)
+  ctx.fillText(width + 'm', canvas.width - unit / 2 - 20, canvas.height - 40)
 
   // draw the time stats
   ctx.textAlign = 'right'
   ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
   ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
+  ctx.fillText(`Ticks: ${content.ticks.toExponential(1)}`, canvas.width - 20, 60)
+  const fps = Math.round(animation.frames / 3 / content.realTime)
+  ctx.fillText(`FPS: ${isNaN(fps) ? 0 : fps}`, canvas.width - 20, 80)
+
+  if (animation.dragging) {
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(canvas.width / 2 - 100, 84, 200, 22)
+    ctx.fillStyle = '#FFFFFF'
+    ctx.textAlign = 'center'
+    ctx.fillText(`Click to select a position or hit X to return.`, canvas.width / 2, 100)
+  }
 }
 
 animation.render = function () {
-  const {ctx, canvas} = this
+  const {ctx, canvas, translation} = this
   const {objects} = content
 
   // clear the canvas
@@ -409,7 +477,7 @@ animation.render = function () {
 
   if (animation.dragging) {
     if (animation.draggingCenter) {
-      const [x, y] = animation.draggingPosition
+      const [x, y] = animation.draggingPositionEnd
       ctx.strokeStyle = animation.draggingColor
       ctx.beginPath()
       ctx.moveTo(x, y - 10)
@@ -419,19 +487,39 @@ animation.render = function () {
       ctx.stroke()
     } else {
       // draw the circle as if the object was there
-      const pos = animation.draggingPosition
+      const pos = animation.draggingPositionStart
       const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
       const color = animation.draggingColor
       this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+
+      // draw the arrow
+      if (animation.mouseHeld) {
+        const endPos = animation.draggingPositionEnd
+        ctx.strokeStyle = '#FFFFFF'
+        ctx.beginPath()
+        ctx.moveTo(pos[0], pos[1])
+        ctx.lineTo(endPos[0], endPos[1])
+        ctx.stroke()
+      }
     }
   }
 
   if (animation.drawControls) {
-    this.renderControls()
+    // draw the center point
+    const x = translation[0] + canvas.width / 2
+    const y = translation[1] + canvas.height / 2
+    ctx.strokeStyle = '#FFFFFF'
+    ctx.beginPath()
+    ctx.moveTo(x, y - 10)
+    ctx.lineTo(x, y + 10)
+    ctx.moveTo(x - 10, y)
+    ctx.lineTo(x + 10, y)
+    ctx.stroke()
+    return
   }
 }
 
-},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":12,"../ui/ui.js":31,"./animation.js":1}],6:[function(require,module,exports){
+},{"../content/body.js":8,"../content/content.js":9,"../content/vec2.js":12,"../ui/ui.js":36,"./animation.js":1}],6:[function(require,module,exports){
 const animation = require('./animation.js')
 const Vec2 = require('../content/vec2.js')
 
@@ -496,9 +584,9 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.ui.initialize()
 
   ASTRO.mainLoop.start()
-})
+}, {passive: true})
 
-},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":31}],8:[function(require,module,exports){
+},{"./animation/animation.js":1,"./animation/loop.js":4,"./content/content.js":9,"./ui/ui.js":36}],8:[function(require,module,exports){
 const Color = require('../animation/color.js')
 const content = require('./content.js')
 const Vec2 = require('./vec2.js')
@@ -1301,6 +1389,8 @@ const Body = require('../content/body.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
 
+const isColorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+
 module.exports = class Deserializer {
 
   static selectScene (data, cb) {
@@ -1311,6 +1401,7 @@ module.exports = class Deserializer {
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
 
+      animation.frames = 0
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
       animation.ratio = data.viewport.ratio
@@ -1352,18 +1443,27 @@ module.exports = class Deserializer {
       (typeof data.viewport === 'object') &&
       (typeof data.viewport.translationX === 'number') && !isNaN(data.viewport.translationX) &&
       (typeof data.viewport.translationY === 'number') && !isNaN(data.viewport.translationY) &&
-      (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) &&
+      (typeof data.viewport.ratio === 'number') && !isNaN(data.viewport.ratio) && data.viewport.ratio > 0 &&
       (typeof data.content === 'object') &&
       (typeof data.content.timeFactor === 'number') &&
       (Array.isArray(data.content.objects)) &&
       (Array.isArray(data.content.selectedObjectIndices)) &&
       (data.content.selectedObjectIndices.every((index) => index > -1 && index < data.content.selectedObjectIndices.length)) &&
-      data.content.objects.filter((item) => typeof item === 'object')
+      data.content.objects.filter((item) =>
+        typeof item === 'object' &&
+        typeof item.name === 'string' &&
+        typeof item.positionX === 'number' &&
+        typeof item.positionY === 'number' &&
+        typeof item.velocityX === 'number' &&
+        typeof item.velocityY === 'number' &&
+        typeof item.mass === 'number' && item.mass > 0 &&
+        typeof item.radius === 'number' && item.radius > 0 &&
+        typeof item.color === 'string' && isColorRegex.test(item.color))
   }
 
 }
 
-},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":31}],20:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/body.js":8,"../content/content.js":9,"../ui/ui.js":36}],20:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const ui = require('../ui/ui.js')
@@ -1406,12 +1506,16 @@ module.exports = class Serializer {
 
 }
 
-},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":31}],21:[function(require,module,exports){
+},{"../animation/animation.js":1,"../content/content.js":9,"../ui/ui.js":36}],21:[function(require,module,exports){
 const Dialog = require('./dialog.js')
 
 const aboutDialog = module.exports = new Dialog(document.getElementById('about-dialog'))
 
-document.getElementById('about-submit').addEventListener('click', () => {
+const closeButton = document.getElementById('about-submit')
+
+aboutDialog.on('open', closeButton.focus.bind(closeButton))
+
+closeButton.addEventListener('click', () => {
   aboutDialog.close()
 })
 
@@ -1446,7 +1550,7 @@ module.exports = {
   }
 }
 
-},{"./about-dialog.js":21,"./details-dialog.js":22,"./new-object-dialog.js":25,"./object-dialog.js":26,"./scene-dialog.js":27,"./settings-dialog.js":28}],24:[function(require,module,exports){
+},{"./about-dialog.js":21,"./details-dialog.js":22,"./new-object-dialog.js":28,"./object-dialog.js":29,"./scene-dialog.js":30,"./settings-dialog.js":31}],24:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const dialogManager = require('./dialog-manager.js')
 const EventEmitter = require('../../content/event-emitter.js')
@@ -1471,43 +1575,41 @@ module.exports = class Dialog extends EventEmitter {
       this.inputs[input.name] = input
     }
   }
-  forEachInput (cb) {
+  set (values) {
     let index
     const {inputs} = this
     for (index in inputs) {
       const input = inputs[index]
-      cb(input, index)
-    }
-  }
-  reset () {
-    this.forEachInput((input) => {
-      input.value = input.getAttribute('data-default-value') || ''
-    })
-  }
-  set (values) {
-    this.forEachInput((input, index) => {
       if (values[index]) {
         input.value = values[index]
       }
-    })
+    }
   }
   validate () {
     let valid = true
     const invalid = this.invalidInputs = []
-    this.forEachInput((input, name) => {
-      if (!valid) {
-        return
-      }
-      const filter = input.filterFunction || this.defaultFilterFunction
-      const inputValid = !!filter(input, input.value, name)
-      if (!inputValid) {
-        invalid.push(input)
-        input.classList.add('dialog-input-invalid')
+    let inputValid = true
+
+    let index
+    const {inputs} = this
+    for (index in inputs) {
+      const input = inputs[index]
+
+      if (typeof input.checkValidity === 'function') {
+        inputValid = input.checkValidity()
       } else {
-        input.classList.remove('dialog-input-invalid')
+        const filter = input.filterFunction || this.defaultFilterFunction
+        inputValid = !!filter(input, input.value, index)
+        if (!inputValid) {
+          invalid.push(input)
+          input.classList.add('dialog-input-invalid')
+        } else {
+          input.classList.remove('dialog-input-invalid')
+        }
       }
-      valid = inputValid
-    })
+      valid = valid && inputValid
+    }
+
     return valid
   }
   getInputByName (name) {
@@ -1565,10 +1667,108 @@ module.exports = class Dialog extends EventEmitter {
   }
 }
 
-},{"../../animation/animation.js":1,"../../content/event-emitter.js":10,"../../ui/ui.js":31,"./dialog-manager.js":23}],25:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/event-emitter.js":10,"../../ui/ui.js":36,"./dialog-manager.js":23}],25:[function(require,module,exports){
+const MultiUnitInput = require('./multi-unit-input.js')
+
+module.exports = class LengthInput extends MultiUnitInput {
+
+  constructor (wrapperElement, name, initialValue) {
+    super(wrapperElement, name, initialValue, 'm', 1, 'meter')
+    this.addUnit('AU',  1.495978707e11, 'astronomical unit')
+    this.addUnit('ly',  9.4607e15, 'light year')
+    this.addUnit('pc', 3.0857e16, 'parsec')
+  }
+
+}
+
+},{"./multi-unit-input.js":27}],26:[function(require,module,exports){
+const MultiUnitInput = require('./multi-unit-input.js')
+
+module.exports = class MassInput extends MultiUnitInput {
+
+  constructor (wrapperElement, name, initialValue) {
+    super(wrapperElement, name, initialValue, 'kg', 1, 'kilogram')
+    this.addUnit('solar mass', 1.98855e30, 'proportion of solar mass')
+    this.buttons['solar mass'].innerHTML = 'M<span class="sub">\u2609</span>'
+  }
+
+  checkValidity () {
+    const valid = this.value > 0
+    if (valid) {
+      this._inputElement.classList.remove('dialog-input-invalid')
+    } else {
+      this._inputElement.classList.add('dialog-input-invalid')
+    }
+    return valid
+  }
+
+}
+
+},{"./multi-unit-input.js":27}],27:[function(require,module,exports){
+module.exports = class MultiUnitInput {
+
+  constructor (wrapperElement, name, initialValue, initialUnit, initialRatio, initialTitle) {
+    this.units = {}
+    this.buttons = {}
+    this._unit = initialUnit
+
+    this.wrapperElement = wrapperElement
+    const input = this._inputElement = document.createElement('input')
+    this.name = input.name = name
+    wrapperElement.appendChild(input)
+
+    this.addUnit(initialUnit, initialRatio, initialTitle)
+    this.value = initialValue
+    this.setUnit(initialUnit)
+  }
+
+  get value () {
+    return Number(this._inputElement.value) * this.units[this._unit]
+  }
+
+  set value (newVal) {
+    this._inputElement.value = (newVal / this.units[this._unit]).toExponential(3)
+  }
+
+  addUnit (name, ratio, title) {
+    this.units[name] = ratio
+
+    const pushButton = document.createElement('button')
+    pushButton.textContent = name
+    pushButton.classList.add('unit-push-button')
+    pushButton.addEventListener('click', this.setUnit.bind(this, name))
+    pushButton.setAttribute("tabindex", "-1")
+    if (title) {
+      pushButton.title = title
+    }
+    this.buttons[name] = pushButton
+    this.wrapperElement.appendChild(pushButton)
+  }
+
+  checkValidity () {
+    return true
+  }
+
+  setUnit (name) {
+    const ratio = this.units[name]
+
+    const value = this.value
+    this.buttons[this._unit].classList.remove('pushed')
+    this._unit = name
+    this.buttons[name].classList.add('pushed')
+    this.value = value
+  }
+
+}
+
+},{}],28:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const Dialog = require('./dialog.js')
 const Vec2 = require('../../content/vec2.js')
+const LengthInput = require('./length-input.js')
+const UnsignedLengthInput = require('./unsigned-length-input.js')
+const MassInput = require('./mass-input')
+const VelocityInput = require('./velocity-input.js')
 const Color = require('../../animation/color.js')
 const Body = require('../../content/body.js')
 const content = require('../../content/content.js')
@@ -1577,48 +1777,42 @@ const newObjectDialog = module.exports = new Dialog(document.getElementById('new
 
 // get the input elements
 const name = document.getElementById('new-object-name')
-const positionX = document.getElementById('new-object-position-x')
-const positionY = document.getElementById('new-object-position-y')
-const velocityX = document.getElementById('new-object-velocity-x')
-const velocityY = document.getElementById('new-object-velocity-y')
-const mass = document.getElementById('new-object-mass')
-const radius = document.getElementById('new-object-radius')
+const positionX = new LengthInput(document.getElementById('new-object-position-x'), 'position-x', 0)
+const positionY = new LengthInput(document.getElementById('new-object-position-y'), 'position-y', 0)
+const velocityX = new VelocityInput(document.getElementById('new-object-velocity-x'), 'velocity-x', 0)
+const velocityY = new VelocityInput(document.getElementById('new-object-velocity-y'), 'velocity-y', 0)
+const mass = new MassInput(document.getElementById('new-object-mass'), 'mass', 0)
+const radius = new UnsignedLengthInput(document.getElementById('new-object-radius'), 'radius', 0)
 const color = document.getElementById('new-object-color')
 
 // set the filter logic of the input elements
 newObjectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
-newObjectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
-newObjectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
-
-newObjectDialog.on('open', () => {
-  name.focus()
-})
 
 newObjectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
-  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionX.value = (animation.draggingPositionStart[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio
+  positionY.value = (animation.draggingPositionStart[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio
+  velocityX.value = (animation.draggingPositionEnd[0] - animation.draggingPositionStart[0]) / animation.ratio
+  velocityY.value = (animation.draggingPositionEnd[1] - animation.draggingPositionStart[1]) / animation.ratio
   animation.dragging = false
   newObjectDialog.show()
 })
 
 document.getElementById('new-object-drag-position').addEventListener('click', () => {
-  const radiusNumber = Number(radius.value)
-  if (radiusNumber <= 0) {
-    radius.classList.add('dialog-input-invalid')
+  if (!radius.checkValidity()) {
+    radius._inputElement.focus()
     return
-  } else {
-    radius.classList.remove('dialog-input-invalid')
   }
+
   animation.dragging = true
-  animation.draggingRadius = radiusNumber
+  animation.draggingRadius = radius.value
   animation.draggingColor = color.value
   newObjectDialog.hide()
 })
 
 document.getElementById('new-object-position-center').addEventListener('click', () => {
-  positionX.value = (-animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
-  positionY.value = (-animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionX.value = -animation.translation[0] * content.METERS_PER_PIXEL / animation.ratio
+  positionY.value = -animation.translation[1] * content.METERS_PER_PIXEL / animation.ratio
 })
 
 document.getElementById('new-object-submit').addEventListener('click', newObjectDialog.submit = () => {
@@ -1635,9 +1829,13 @@ document.getElementById('new-object-submit').addEventListener('click', newObject
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":12,"./dialog.js":24}],26:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/body.js":8,"../../content/content.js":9,"../../content/vec2.js":12,"./dialog.js":24,"./length-input.js":25,"./mass-input":26,"./unsigned-length-input.js":32,"./velocity-input.js":33}],29:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
+const LengthInput = require('./length-input.js')
+const UnsignedLengthInput = require('./unsigned-length-input.js')
+const MassInput = require('./mass-input')
+const VelocityInput = require('./velocity-input.js')
 const Color = require('../../animation/color.js')
 const Dialog = require('./dialog.js')
 const ui = require('../../ui/ui.js')
@@ -1646,41 +1844,35 @@ const objectDialog = module.exports = new Dialog(document.getElementById('object
 
 // get the input elements
 const name = document.getElementById('object-name')
-const positionX = document.getElementById('object-position-x')
-const positionY = document.getElementById('object-position-y')
-const velocityX = document.getElementById('object-velocity-x')
-const velocityY = document.getElementById('object-velocity-y')
-const mass = document.getElementById('object-mass')
-const radius = document.getElementById('object-radius')
+const positionX = new LengthInput(document.getElementById('object-position-x'), 'position-x', 0)
+const positionY = new LengthInput(document.getElementById('object-position-y'), 'position-y', 0)
+const velocityX = new VelocityInput(document.getElementById('object-velocity-x'), 'velocity-x', 0)
+const velocityY = new VelocityInput(document.getElementById('object-velocity-y'), 'velocity-y', 0)
+const mass = new MassInput(document.getElementById('object-mass'), 'mass', 0)
+const radius = new UnsignedLengthInput(document.getElementById('object-radius'), 'radius', 0)
 const color = document.getElementById('object-color')
 
 // set the filter logic of the input elements
 objectDialog.registerInput(name, positionX, positionY, velocityX, velocityY, mass, radius)
-objectDialog.setFilterFunction(mass, Dialog.greaterThanZero)
-objectDialog.setFilterFunction(radius, Dialog.greaterThanZero)
-
-objectDialog.on('open', () => {
-  name.focus()
-})
 
 objectDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  positionX.value = ((animation.draggingPosition[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
-  positionY.value = ((animation.draggingPosition[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio).toExponential(3)
+  positionX.value = (animation.draggingPositionStart[0] - animation.translation[0] - animation.canvas.width / 2) * content.METERS_PER_PIXEL / animation.ratio
+  positionY.value = (animation.draggingPositionStart[1] - animation.translation[1] - animation.canvas.height / 2) * content.METERS_PER_PIXEL / animation.ratio
+  velocityX.value = (animation.draggingPositionEnd[0] - animation.draggingPositionStart[0]) / animation.ratio
+  velocityY.value = (animation.draggingPositionEnd[1] - animation.draggingPositionStart[1]) / animation.ratio
   animation.dragging = false
   objectDialog.show()
 })
 
 document.getElementById('object-drag-position').addEventListener('click', () => {
-  const radiusNumber = Number(radius.value)
-  if (radiusNumber <= 0) {
-    radius.classList.add('dialog-input-invalid')
+  if (!radius.checkValidity()) {
+    radius._inputElement.focus()
     return
-  } else {
-    radius.classList.remove('dialog-input-invalid')
   }
+
   animation.dragging = true
-  animation.draggingRadius = radiusNumber
+  animation.draggingRadius = radius.value
   animation.draggingColor = color.value
   objectDialog.hide()
 })
@@ -1725,7 +1917,7 @@ document.getElementById('object-submit').addEventListener('click', objectDialog.
   }
 })
 
-},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":31,"./dialog.js":24}],27:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../animation/color.js":2,"../../content/content.js":9,"../../ui/ui.js":36,"./dialog.js":24,"./length-input.js":25,"./mass-input":26,"./unsigned-length-input.js":32,"./velocity-input.js":33}],30:[function(require,module,exports){
 const Deserializer = require('../../serialization/deserializer.js')
 const Dialog = require('./dialog.js')
 const scenes = require('../../scenes/list.js')
@@ -1796,7 +1988,7 @@ document.getElementById('load-scene').addEventListener('click', sceneDialog.subm
   }
 })
 
-},{"../../scenes/list.js":15,"../../serialization/deserializer.js":19,"./dialog.js":24}],28:[function(require,module,exports){
+},{"../../scenes/list.js":15,"../../serialization/deserializer.js":19,"./dialog.js":24}],31:[function(require,module,exports){
 const animation = require('../../animation/animation.js')
 const content = require('../../content/content.js')
 const Dialog = require('./dialog.js')
@@ -1824,16 +2016,13 @@ settingsDialog.registerInput(translationX, translationY, scalingFactor, timeFact
 settingsDialog.setFilterFunction(scalingFactor, Dialog.greaterThanZero)
 settingsDialog.setFilterFunction(timeFactor, Dialog.greaterThanZero)
 
-settingsDialog.on('open', () => {
-  translationX.focus()
-})
-
 settingsDialog.on('drag-end', () => {
   // convert cursor position into simulation position
-  translationX.value = (animation.translation[0] + animation.draggingPosition[0] - animation.canvas.width / 2).toExponential(3)
-  translationY.value = (animation.translation[1] + animation.draggingPosition[1] - animation.canvas.height / 2).toExponential(3)
+  translationX.value = (animation.translation[0] + animation.draggingPositionEnd[0] - animation.canvas.width / 2).toExponential(3)
+  translationY.value = (animation.translation[1] + animation.draggingPositionEnd[1] - animation.canvas.height / 2).toExponential(3)
   animation.dragging = false
   animation.draggingCenter = false
+  animation.shouldRender = true
   settingsDialog.show()
 })
 
@@ -1878,7 +2067,41 @@ document.getElementById('settings-submit').addEventListener('click', settingsDia
   }
 })
 
-},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":31,"./dialog.js":24}],29:[function(require,module,exports){
+},{"../../animation/animation.js":1,"../../content/content.js":9,"../../ui/ui.js":36,"./dialog.js":24}],32:[function(require,module,exports){
+const LengthInput = require('./length-input.js')
+
+module.exports = class UnsignedLengthInput extends LengthInput {
+
+  constructor (wrapperElement, name, initialValue) {
+    super(wrapperElement, name, initialValue)
+  }
+
+  checkValidity () {
+    const valid = this.value > 0
+    if (valid) {
+      this._inputElement.classList.remove('dialog-input-invalid')
+    } else {
+      this._inputElement.classList.add('dialog-input-invalid')
+    }
+    return valid
+  }
+
+}
+
+},{"./length-input.js":25}],33:[function(require,module,exports){
+const MultiUnitInput = require('./multi-unit-input.js')
+
+module.exports = class VelocityInput extends MultiUnitInput {
+
+  constructor (wrapperElement, name, initialValue) {
+    super(wrapperElement, name, initialValue, 'm/s', 1, 'meter per second')
+    this.addUnit('km/h', 1/3.6, 'kilometer per hour')
+    this.addUnit('c',  2.99792458e8, 'proportion of speed of light')
+  }
+
+}
+
+},{"./multi-unit-input.js":27}],34:[function(require,module,exports){
 const animation = require('../animation/animation.js')
 const content = require('../content/content.js')
 const {mainLoop} = require('../astrosim.js')
@@ -1886,70 +2109,57 @@ const Serializer = require('../serialization/serializer.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
-  const sideBar = document.getElementById('side-bar')
-
   // events for the buttons
   document.getElementById('serialize-button').addEventListener('click', () => {
     const data = Serializer.createData()
     Serializer.serialize(data)
-  })
+  }, {passive: true})
   this.togglePauseButton.addEventListener('click', () => {
     if (mainLoop.running) {
       ui.pause()
     } else {
       ui.unpause()
     }
-  })
-  document.getElementById('open-new-object-dialog').addEventListener('click', () => {
-    this.dialogs.newObjectDialog.open()
-  })
-  document.getElementById('open-about').addEventListener('click', () => {
-    this.dialogs.aboutDialog.open()
-  })
+  }, {passive: true})
+  document.getElementById('open-new-object-dialog').addEventListener('click', this.dialogs.newObjectDialog.open.bind(this.dialogs.newObjectDialog), {passive: true})
+  document.getElementById('open-about').addEventListener('click', this.dialogs.aboutDialog.open.bind(this.dialogs.aboutDialog), {passive: true})
   document.getElementById('open-details').addEventListener('click', () => {
     ui.updateHistory()
     this.dialogs.detailsDialog.open()
-  })
+  }, {passive: true})
   document.getElementById('object-delete').addEventListener('click', () => {
     const object = content.editedObject
     content.remove(object)
     this.update()
     animation.shouldRender = true
     this.dialogs.objectDialog.close()
-  })
-  document.getElementById('object-cancel').addEventListener('click', () => {
-    this.dialogs.objectDialog.close()
-  })
-  document.getElementById('new-object-cancel').addEventListener('click', () => {
-    this.dialogs.newObjectDialog.close()
-  })
+  }, {passive: true})
+  document.getElementById('object-cancel').addEventListener('click', this.dialogs.objectDialog.close.bind(this.dialogs.objectDialog))
+  document.getElementById('new-object-cancel').addEventListener('click', this.dialogs.newObjectDialog.close.bind(this.dialogs.newObjectDialog))
   document.getElementById('open-settings-dialog').addEventListener('click', () => {
     const {settingsDialog} = this.dialogs
     settingsDialog.setValues()
     settingsDialog.open()
-  })
-  document.getElementById('open-scene').addEventListener('click', () => {
-    this.dialogs.sceneDialog.open()
-  })
+  }, {passive: true})
+  document.getElementById('open-scene').addEventListener('click', this.dialogs.sceneDialog.open.bind(this.dialogs.sceneDialog))
   document.getElementById('cancel-scene').addEventListener('click', () => {
     this.dialogs.sceneDialog.hideError()
     this.dialogs.sceneDialog.close()
-  })
-  document.getElementById('settings-cancel').addEventListener('click', () => {
-    this.dialogs.settingsDialog.close()
-  })
+  }, {passive: true})
+  document.getElementById('settings-cancel').addEventListener('click', this.dialogs.settingsDialog.close.bind(this.dialogs.settingsDialog), {passive: true})
 
-  document.getElementById('open-side-bar').addEventListener('click', () => {
-    sideBar.classList.remove('side-bar-closed')
-  })
+  const openSideBarButton = document.getElementById('open-side-bar')
+  openSideBarButton.addEventListener('click', ui.openSideBar.bind(ui))
   document.getElementById('close-side-bar').addEventListener('click', () => {
-    sideBar.classList.add('side-bar-closed')
-  })
+    ui.closeSideBar()
+    openSideBarButton.focus()
+  }, {passive: true})
 
   ui.keyboard.on('Enter', () => {
     if (ui.dialogs.openDialog) {
       ui.dialogs.openDialog.submit()
-    } else {
+    } else if (document.activeElement === document.body) {
+      // no element has the focus
       if (mainLoop.running) {
         ui.pause()
       } else {
@@ -1958,7 +2168,34 @@ module.exports = function () {
     }
   })
 
-  ui.keyboard.on('n', () => {
+  ui.keyboard.on('i', () => {
+    if (mainLoop.running) {
+      ui.pause()
+    } else {
+      ui.unpause()
+    }
+  })
+
+  ui.keyboard.on('keyup', (e) => {
+    if (ui.dialogs.openDialog) {
+      return
+    }
+    let key = Number(e.key)
+    if (key === 0) {
+      key = 10
+    }
+    if (key > 0 && key < 11) {
+      if (content.objects[key - 1]) {
+        if (!ui.keyboard.isKeyPressed('o')) {
+          ui.addObjectToSelection(content.objects[key - 1])
+        } else {
+          ui.openEditObject(content.objects[key - 1])
+        }
+      }
+    }
+  })
+
+  ui.keyboard.on('a', () => {
     if (!ui.dialogs.openDialog) {
       ui.dialogs.newObjectDialog.open()
     }
@@ -1970,6 +2207,13 @@ module.exports = function () {
     }
   })
 
+  ui.keyboard.on('q', (e) => {
+    if (!ui.dialogs.openDialog) {
+      ui.selectedObjects = []
+      ui.updateSelection()
+    }
+  })
+
   ui.keyboard.on('p', () => {
     if (!ui.dialogs.openDialog) {
       ui.dialogs.settingsDialog.open()
@@ -1977,10 +2221,19 @@ module.exports = function () {
   })
 
   ui.keyboard.on('x', () => {
-    if (ui.dialogs.openDialog && document.activeElement === document.body) {
+    if (animation.dragging && ui.dialogs.openDialog) {
+      animation.dragging = false
+      ui.dialogs.openDialog.show()
+    }
+  })
+
+  ui.keyboard.on('Escape', () => {
+    if (ui.dialogs.openDialog) {
       ui.dialogs.openDialog.close()
     }
   })
+
+  ui.keyboard.on('n', ui.toggleSideBar.bind(ui))
 
   ui.keyboard.on('m', () => {
     if (!ui.dialogs.openDialog) {
@@ -1991,7 +2244,7 @@ module.exports = function () {
   })
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":20,"../ui/ui.js":31}],30:[function(require,module,exports){
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/content.js":9,"../serialization/serializer.js":20,"../ui/ui.js":36}],35:[function(require,module,exports){
 const EventEmitter = require('../content/event-emitter.js')
 
 module.exports = class Keyboard extends EventEmitter {
@@ -2004,7 +2257,7 @@ module.exports = class Keyboard extends EventEmitter {
     document.addEventListener('keydown', (e) => {
       this.pressedKeys[e.key] = true
       this.emit('keydown', e)
-    })
+    }, {passive: true})
 
     document.addEventListener('keyup', (e) => {
       this.pressedKeys[e.key] = false
@@ -2019,7 +2272,7 @@ module.exports = class Keyboard extends EventEmitter {
 
 }
 
-},{"../content/event-emitter.js":10}],31:[function(require,module,exports){
+},{"../content/event-emitter.js":10}],36:[function(require,module,exports){
 const ASTRO = require('../astrosim.js')
 const {mainLoop} = ASTRO
 let content
@@ -2036,15 +2289,18 @@ const ui = module.exports = ASTRO.ui = {
   dialogs: require('./dialogs/dialog-manager.js'),
   keyboard: new Keyboard(),
 
+  sideBar: null,
+
   initialize () {
     this.list = document.getElementById('object-list')
     this.historyTable = document.getElementById('history')
     this.togglePauseButton = document.getElementById('toggle-pause-button')
+    this.sideBar = document.getElementById('side-bar')
 
     content = require('../content/content.js')
 
-    require('./event-listeners.js').call(this)
     this.dialogs.initialize()
+    require('./event-listeners.js').call(this)
   },
   update () {
     let index
@@ -2071,30 +2327,11 @@ const ui = module.exports = ASTRO.ui = {
 
       const optionsButton = document.createElement('button')
       optionsButton.classList.add('edit-button')
-      optionsButton.addEventListener('click', () => {
-        // open properties dialog
-        content.editedObject = object
-        const {objectDialog} = this.dialogs
-        objectDialog.setValues()
-        objectDialog.open()
-      })
+      optionsButton.addEventListener('click', ui.openEditObject.bind(ui, object))
 
       const centerButton = document.createElement('button')
       centerButton.classList.add('center-button')
-      centerButton.addEventListener('click', () => {
-        // add object to selection
-        const {selectedObjects} = ui
-        let selectionIndex
-        if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
-          selectedObjects.splice(selectionIndex, 1)
-          item.classList.remove('selected-object')
-        } else {
-          selectedObjects.push(object)
-          item.classList.add('selected-object')
-        }
-
-        animation.shouldRender = true
-      })
+      centerButton.addEventListener('click', ui.addObjectToSelection.bind(ui, object))
 
       const buttonWrapper = document.createElement('div')
       buttonWrapper.appendChild(optionsButton)
@@ -2108,9 +2345,31 @@ const ui = module.exports = ASTRO.ui = {
     this.updateSelection()
   },
 
+  addObjectToSelection (object) {
+    // add object to selection
+    const {selectedObjects} = this
+    let selectionIndex
+    if ((selectionIndex = selectedObjects.indexOf(object)) > -1) {
+      selectedObjects.splice(selectionIndex, 1)
+    } else {
+      selectedObjects.push(object)
+    }
+    this.updateSelection()
+
+    animation.shouldRender = true
+  },
+
+  openEditObject (object) {
+    // open properties dialog
+    content.editedObject = object
+    const {objectDialog} = this.dialogs
+    objectDialog.setValues()
+    objectDialog.open()
+  },
+
   updateSelection () {
     const selection = ui.selectedObjects
-    const selectionIndices = selection.map((object, index) => index)
+    const selectionIndices = selection.map((object, index) => object.id)
     const {list} = this
     const children = Array.prototype.slice.call(list.children)
     const {length} = children
@@ -2149,10 +2408,7 @@ const ui = module.exports = ASTRO.ui = {
       const selectButton = document.createElement('span')
       selectButton.classList.add('details-list-item-before')
       selectButton.style.backgroundColor = object.color.hexString()
-      selectButton.addEventListener('click', () => {
-        ui.historyObject = object
-        ui.updateHistoryValues()
-      })
+      selectButton.addEventListener('click', ui.updateHistoryValues.bind(ui, object))
       const name = document.createElement('span')
       name.textContent = object.name
 
@@ -2165,8 +2421,7 @@ const ui = module.exports = ASTRO.ui = {
     this.updateHistoryValues()
   },
 
-  updateHistoryValues () {
-    const object = this.historyObject
+  updateHistoryValues (object) {
     const {objects} = content
 
     if (!object) {
@@ -2197,6 +2452,9 @@ const ui = module.exports = ASTRO.ui = {
   },
 
   pause () {
+    if (animation.dragging) {
+      return
+    }
     animation.pause()
     this.isPlaying = false
     this.togglePauseButton.textContent = 'Play'
@@ -2204,13 +2462,29 @@ const ui = module.exports = ASTRO.ui = {
     this.togglePauseButton.classList.remove('pause-button')
   },
   unpause () {
+    if (animation.dragging) {
+      return
+    }
     animation.unpause()
     this.isPlaying = true
     this.togglePauseButton.textContent = 'Pause'
     this.togglePauseButton.classList.remove('play-button')
     this.togglePauseButton.classList.add('pause-button')
+  },
+  openSideBar () {
+    this.sideBar.classList.remove('side-bar-closed')
+  },
+  closeSideBar () {
+    this.sideBar.classList.add('side-bar-closed')
+  },
+  toggleSideBar () {
+    if (this.sideBar.classList.contains('side-bar-closed')) {
+      this.sideBar.classList.remove('side-bar-closed')
+    } else {
+      this.sideBar.classList.add('side-bar-closed')
+    }
   }
 
 }
 
-},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":23,"./event-listeners.js":29,"./keyboard.js":30}]},{},[7]);
+},{"../animation/animation.js":1,"../astrosim.js":7,"../content/body.js":8,"../content/content.js":9,"./dialogs/dialog-manager.js":23,"./event-listeners.js":34,"./keyboard.js":35}]},{},[7]);

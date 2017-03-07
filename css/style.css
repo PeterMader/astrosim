@@ -6,11 +6,6 @@ html, body {
 }
 
 body {
-  /* Preload the play icon. */
-  background-image: url('../res/icon_play.png');
-  background-repeat: no-repeat;
-  background-position: -9999px -9999px;
-
   /* Avoid text selection */
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -52,39 +47,49 @@ a:hover {
   width: 32px;
 }
 
-div.icon-before {
-  background-position: 3px center;
+.icon-before {
   padding-left: 30px;
+  background-image: url('../res/sprite.png');
   background-repeat: no-repeat;
+}
+
+#close-side-bar {
+  /* reset button styles */
+  padding: 0;
+  background-color: transparent;
+  margin: 0;
+}
+
+#center-viewport, .drag-button {
+  padding-left: 30px;
+  border-radius: 4px;
+  background-repeat: no-repeat;
+  background-image: url('../res/sprite.png');
+}
+
+.drag-button {
+  background-position: 3px -198px;
 }
 
 #center-viewport {
-  background-position: 3px center;
-  padding-left: 30px;
+  background-position: 3px -78px;
+}
+
+.center-button, .edit-button {
+  height: 30px;
+  width: 30px;
+  padding: 0;
   border-radius: 4px;
   background-repeat: no-repeat;
-  background-image: url('../res/icon_center.png');
+  background-image: url('../res/sprite.png');
 }
 
 .center-button {
-  background-position: center;
-  height: 30px;
-  width: 30px;
-  padding: 0;
-  border-radius: 4px;
-  background-repeat: no-repeat;
-  background-image: url('../res/icon_center.png');
+  background-position: center -77px;
 }
 
 .edit-button {
-  background-position: center;
-  height: 30px;
-  width: 30px;
-  line-height: 30px;
-  padding: 0;
-  border-radius: 4px;
-  background-repeat: no-repeat;
-  background-image: url('../res/icon_properties.png');
+  background-position: center -436px;
 }
 
 .selected-object .center-button {
@@ -92,56 +97,65 @@ div.icon-before {
 }
 
 .pause-button {
-  background-image: url('../res/icon_pause.png');
+  background-position: 3px -352px;
 }
 
 .play-button {
-  background-image: url('../res/icon_play.png');
+  background-position: 3px -392px;
 }
 
 #open-settings-dialog {
-  background-image: url('../res/icon_settings.png');
+  background-position: 3px -512px;
 }
 
 #open-new-object-dialog {
-  background-image: url('../res/icon_add.png');
+  background-position: 3px -32px;
 }
 
 #serialize-button {
-  background-image: url('../res/icon_export.png');
+  background-position: 3px -232px;
 }
 
 #open-scene {
-  background-image: url('../res/icon_scene.png');
+  background-position: 3px -472px;
 }
 
 #open-about {
-  background-image: url('../res/icon_about.png');
+  background-position: 3px 8px;
 }
 
 #open-details {
-  background-image: url('../res/icon_details.png');
+  background-position: 3px -152px;
 }
 
 #open-side-bar {
   position: absolute;
   top: 10px;
   left: 10px;
-  padding: 5px;
+  height: 40px;
+  width: 40px;
   background-color: #EEEEEE;
-  background-image: url('../res/icon_menu.png');
+  background-position: center -312px;
+  background-image: url('../res/sprite.png');
   border-radius: 3px;
   cursor: pointer;
   border: 1px solid #999999;
   z-index: 9;
 }
 
-#canvas {
+#canvas, #text-canvas {
   display: block;
-  background-color: #000000;
   position: absolute;
   top: 0;
+}
+
+#canvas {
+  background-color: #000000;
   z-index: 5;
+}
+
+#text-canvas {
+  z-index: 6;
 }
 
 .close-button {
@@ -149,7 +163,8 @@ div.icon-before {
   top: 5px;
   right: 5px;
   cursor: pointer;
-  background-image: url('../res/icon_close.png');
+  background-position: center -115px;
+  background-image: url('../res/sprite.png');
 }
 
 .selected-object {
@@ -252,6 +267,28 @@ button:hover {
   color: #FFFFFF;
 }
 
+.unit-push-button {
+  margin: 0;
+  display: inline;
+  border-radius: 0;
+  background-color: #555555;
+  padding: 3px 7px 3px 7px;
+}
+
+.unit-push-button:last-of-type {
+  border-radius: 0 2px 2px 0;
+}
+
+.sub {
+  font-size: 70%;
+  position: relative;
+  top: 2px;
+}
+
+.unit-push-button.pushed {
+  background-color: #111111;
+}
+
 input {
   border: 1px solid #555555;
   padding: 3px;
@@ -269,11 +306,12 @@ input:focus {
   border-bottom: 1px solid #EEEEEE;
   cursor: pointer;
   color: #555555;
+  height: 40px;
+  line-height: 40px;
   font-size: 90%;
-  padding: 10px;
 }
 
-.main-button:hover {
+.main-button:hover, .main-button:focus {
   color: #000000;
 }
 

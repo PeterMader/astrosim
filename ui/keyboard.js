@@ -10,7 +10,7 @@ module.exports = class Keyboard extends EventEmitter {
     document.addEventListener('keydown', (e) => {
       this.pressedKeys[e.key] = true
       this.emit('keydown', e)
-    })
+    }, {passive: true})
 
     document.addEventListener('keyup', (e) => {
       this.pressedKeys[e.key] = false

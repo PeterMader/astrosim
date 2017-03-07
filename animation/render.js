@@ -5,10 +5,15 @@ const ui = require('../ui/ui.js')
 const Vec2 = require('../content/vec2.js')
 
 animation.drawCircle = function (x, y, radius, color) {
-  const {ctx} = this
-  ctx.fillStyle = color
+  const {canvas, ctx} = this
+
+  if (x - radius > canvas.width || x + radius < 0 || y - radius > canvas.height || y + radius < 0) {
+    // circle is out of viewport bounds
+    return
+  }
 
   // draw the circle shape and fill it
+  ctx.fillStyle = color
   ctx.beginPath()
   ctx.moveTo(x, y - radius)
 
@@ -17,18 +22,16 @@ animation.drawCircle = function (x, y, radius, color) {
 }
 
 animation.renderControls = function () {
-  const {translation, ratio, canvas, ctx} = this
+  const {translation, ratio} = this
+  const canvas = this.textCanvas
+  const ctx = this.textCtx
 
-  // draw the center point
-  const x = translation[0] + canvas.width / 2
-  const y = translation[1] + canvas.height / 2
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.beginPath()
-  ctx.moveTo(x, y - 10)
-  ctx.lineTo(x, y + 10)
-  ctx.moveTo(x - 10, y)
-  ctx.lineTo(x + 10, y)
-  ctx.stroke()
+  // clear the canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+  if (!animation.drawControls) {
+    return
+  }
 
   // draw the unit
   ctx.fillStyle = '#FFFFFF'
@@ -36,16 +39,27 @@ animation.renderControls = function () {
   const width = (unit * content.METERS_PER_PIXEL / this.ratio).toExponential(2)
   ctx.fillRect(canvas.width - unit - 20, canvas.height - 22, unit, 2)
   ctx.textAlign = 'center'
-  ctx.fillText(width, canvas.width - unit / 2 - 20, canvas.height - 40)
+  ctx.fillText(width + 'm', canvas.width - unit / 2 - 20, canvas.height - 40)
 
   // draw the time stats
   ctx.textAlign = 'right'
   ctx.fillText(`Simulated time: ${content.simulatedTime.toExponential(1)}s`, canvas.width - 20, 20)
   ctx.fillText(`Real time: ${Math.round(content.realTime).toString()}s`, canvas.width - 20, 40)
+  ctx.fillText(`Ticks: ${content.ticks.toExponential(1)}`, canvas.width - 20, 60)
+  const fps = Math.round(animation.frames / 3 / content.realTime)
+  ctx.fillText(`FPS: ${isNaN(fps) ? 0 : fps}`, canvas.width - 20, 80)
+
+  if (animation.dragging) {
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(canvas.width / 2 - 100, 84, 200, 22)
+    ctx.fillStyle = '#FFFFFF'
+    ctx.textAlign = 'center'
+    ctx.fillText(`Click to select a position or hit X to return.`, canvas.width / 2, 100)
+  }
 }
 
 animation.render = function () {
-  const {ctx, canvas} = this
+  const {ctx, canvas, translation} = this
   const {objects} = content
 
   // clear the canvas
@@ -114,7 +128,7 @@ animation.render = function () {
 
   if (animation.dragging) {
     if (animation.draggingCenter) {
-      const [x, y] = animation.draggingPosition
+      const [x, y] = animation.draggingPositionEnd
       ctx.strokeStyle = animation.draggingColor
       ctx.beginPath()
       ctx.moveTo(x, y - 10)
@@ -124,14 +138,34 @@ animation.render = function () {
       ctx.stroke()
     } else {
       // draw the circle as if the object was there
-      const pos = animation.draggingPosition
+      const pos = animation.draggingPositionStart
       const radius = animation.draggingRadius * this.ratio / content.METERS_PER_PIXEL
       const color = animation.draggingColor
       this.drawCircle(pos[0], pos[1], Math.max(radius, 3), color)
+
+      // draw the arrow
+      if (animation.mouseHeld) {
+        const endPos = animation.draggingPositionEnd
+        ctx.strokeStyle = '#FFFFFF'
+        ctx.beginPath()
+        ctx.moveTo(pos[0], pos[1])
+        ctx.lineTo(endPos[0], endPos[1])
+        ctx.stroke()
+      }
     }
   }
 
   if (animation.drawControls) {
-    this.renderControls()
+    // draw the center point
+    const x = translation[0] + canvas.width / 2
+    const y = translation[1] + canvas.height / 2
+    ctx.strokeStyle = '#FFFFFF'
+    ctx.beginPath()
+    ctx.moveTo(x, y - 10)
+    ctx.lineTo(x, y + 10)
+    ctx.moveTo(x - 10, y)
+    ctx.lineTo(x + 10, y)
+    ctx.stroke()
+    return
   }
 }

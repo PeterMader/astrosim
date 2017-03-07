@@ -4,11 +4,11 @@ const dialogManager = require('../ui/dialogs/dialog-manager.js')
 const ui = require('../ui/ui.js')
 
 module.exports = function () {
-  const {canvas} = this
+  const canvas = animation.textCanvas
 
   window.addEventListener('resize', () => {
     animation.adjust()
-  })
+  }, {passive: true})
 
   // event for the scaling
   canvas.addEventListener('wheel', (e) => {
@@ -17,34 +17,81 @@ module.exports = function () {
     const clientY = (e.clientY - canvas.offsetTop) || (canvas.height / 2)
 
     animation.scale(factor, clientX - canvas.width / 2, clientY - canvas.height / 2)
-  })
+  }, {passive: true})
 
   // events for the canvas translation
-  let startX = 0, startY = 0, mouseHeld = false
+  let startX = 0, startY = 0
   canvas.addEventListener('mousedown', (e) => {
-    mouseHeld = true
+    animation.mouseHeld = true
+
+    if (animation.dragging) {
+      animation.draggingPositionStart[0] = e.clientX
+      animation.draggingPositionStart[1] = e.clientY
+      return
+    }
+
     startX = e.clientX
     startY = e.clientY
     document.body.position = 'fixed'
+  }, {passive: true})
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mousedown', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
   })
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mousemove', {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY
+    }))
+  })
+
+  canvas.addEventListener('touchend', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
+  canvas.addEventListener('touchcancel', (e) => {
+    e.preventDefault()
+    canvas.dispatchEvent(new MouseEvent('mouseup', {}))
+  })
+
   canvas.addEventListener('mousemove', (e) => {
     if (animation.dragging) {
       if (e.clientX > canvas.width * .95) {
         animation.translate(1, 0)
+        animation.draggingPositionStart[0] -= 1
+        animation.draggingPositionEnd[0] -= 1
       } else if (e.clientX < canvas.width * .05) {
         animation.translate(-1, 0)
+        animation.draggingPositionStart[0] += 1
+        animation.draggingPositionEnd[0] += 1
       } else if (e.clientY > canvas.height * .95) {
         animation.translate(0, 1)
+        animation.draggingPositionStart[1] -= 1
+        animation.draggingPositionEnd[1] -= 1
       } else if (e.clientY < canvas.height * .05) {
         animation.translate(0, -1)
+        animation.draggingPositionStart[1] += 1
+        animation.draggingPositionEnd[1] += 1
       }
-      animation.draggingPosition[0] = e.clientX
-      animation.draggingPosition[1] = e.clientY
+      if (animation.mouseHeld) {
+        animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionEnd[1] = e.clientY
+      } else {
+        animation.draggingPositionStart[0] = animation.draggingPositionEnd[0] = e.clientX
+        animation.draggingPositionStart[1] = animation.draggingPositionEnd[1] = e.clientY
+      }
       animation.shouldRender = true
       return
     }
 
-    if (!mouseHeld) {
+    if (!animation.mouseHeld) {
       return
     }
 
@@ -52,17 +99,17 @@ module.exports = function () {
     document.body.position = 'absolute'
     startX = e.clientX
     startY = e.clientY
-  })
+  }, {passive: true})
 
   canvas.addEventListener('mouseup', (e) => {
     if (animation.dragging && dialogManager.openDialog) {
       dialogManager.openDialog.emit('drag-end')
     }
-  })
+  }, {passive: true})
 
   document.body.addEventListener('mouseup', () => {
-    mouseHeld = false
-  })
+    animation.mouseHeld = false
+  }, {passive: true})
 
   ui.keyboard.on('keyup', (e) => {
     if (!dialogManager.openDialog) {
@@ -90,13 +137,6 @@ module.exports = function () {
         animation.drawLabels = !animation.drawLabels
         animation.shouldRender = true
       }
-    }
-  })
-
-  ui.keyboard.on('x', (e) => {
-    if (animation.dragging && ui.dialogs.openDialog) {
-      animation.dragging = false
-      ui.dialogs.openDialog.show()
     }
   })
 }

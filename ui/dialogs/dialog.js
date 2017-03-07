@@ -22,43 +22,41 @@ module.exports = class Dialog extends EventEmitter {
       this.inputs[input.name] = input
     }
   }
-  forEachInput (cb) {
+  set (values) {
     let index
     const {inputs} = this
     for (index in inputs) {
       const input = inputs[index]
-      cb(input, index)
-    }
-  }
-  reset () {
-    this.forEachInput((input) => {
-      input.value = input.getAttribute('data-default-value') || ''
-    })
-  }
-  set (values) {
-    this.forEachInput((input, index) => {
       if (values[index]) {
         input.value = values[index]
       }
-    })
+    }
   }
   validate () {
     let valid = true
     const invalid = this.invalidInputs = []
-    this.forEachInput((input, name) => {
-      if (!valid) {
-        return
-      }
-      const filter = input.filterFunction || this.defaultFilterFunction
-      const inputValid = !!filter(input, input.value, name)
-      if (!inputValid) {
-        invalid.push(input)
-        input.classList.add('dialog-input-invalid')
+    let inputValid = true
+
+    let index
+    const {inputs} = this
+    for (index in inputs) {
+      const input = inputs[index]
+
+      if (typeof input.checkValidity === 'function') {
+        inputValid = input.checkValidity()
       } else {
-        input.classList.remove('dialog-input-invalid')
+        const filter = input.filterFunction || this.defaultFilterFunction
+        inputValid = !!filter(input, input.value, index)
+        if (!inputValid) {
+          invalid.push(input)
+          input.classList.add('dialog-input-invalid')
+        } else {
+          input.classList.remove('dialog-input-invalid')
+        }
       }
-      valid = inputValid
-    })
+      valid = valid && inputValid
+    }
+
     return valid
   }
   getInputByName (name) {

@@ -15,6 +15,7 @@ module.exports = class Deserializer {
       content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
       content.TIME_FACTOR = data.content.timeFactor
 
+      animation.frames = 0
       animation.translation[0] = data.viewport.translationX
       animation.translation[1] = data.viewport.translationY
       animation.ratio = data.viewport.ratio
