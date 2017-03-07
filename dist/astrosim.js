@@ -189,6 +189,7 @@ module.exports = function () {
   }, {passive: true})
 
   canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault()
     canvas.dispatchEvent(new MouseEvent('mousedown', {
       clientX: e.touches[0].clientX,
       clientY: e.touches[0].clientY
@@ -196,6 +197,7 @@ module.exports = function () {
   })
 
   canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault()
     canvas.dispatchEvent(new MouseEvent('mousemove', {
       clientX: e.touches[0].clientX,
       clientY: e.touches[0].clientY
@@ -203,10 +205,12 @@ module.exports = function () {
   })
 
   canvas.addEventListener('touchend', (e) => {
+    e.preventDefault()
     canvas.dispatchEvent(new MouseEvent('mouseup', {}))
   })
 
   canvas.addEventListener('touchcancel', (e) => {
+    e.preventDefault()
     canvas.dispatchEvent(new MouseEvent('mouseup', {}))
   })
 
@@ -1649,6 +1653,7 @@ module.exports = class Dialog extends EventEmitter {
 
     dialogManager.openDialog = null
 
+    document.activeElement.blur()
     this.emit('close')
 
     if (ui.isPlaying) {
@@ -2233,7 +2238,11 @@ module.exports = function () {
     }
   })
 
-  ui.keyboard.on('n', ui.toggleSideBar.bind(ui))
+  ui.keyboard.on('n', () => {
+    if (document.activeElement === document.body) {
+      ui.toggleSideBar()
+    }
+  })
 
   ui.keyboard.on('m', () => {
     if (!ui.dialogs.openDialog) {

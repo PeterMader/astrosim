@@ -129,7 +129,11 @@ module.exports = function () {
     }
   })
 
-  ui.keyboard.on('n', ui.toggleSideBar.bind(ui))
+  ui.keyboard.on('n', () => {
+    if (document.activeElement === document.body) {
+      ui.toggleSideBar()
+    }
+  })
 
   ui.keyboard.on('m', () => {
     if (!ui.dialogs.openDialog) {

@@ -96,6 +96,7 @@ module.exports = class Dialog extends EventEmitter {
 
     dialogManager.openDialog = null
 
+    document.activeElement.blur()
     this.emit('close')
 
     if (ui.isPlaying) {
