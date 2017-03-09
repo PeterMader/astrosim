@@ -1,6 +1,5 @@
 title: AstroSim
-description:
-  Documentation of PeterMader/astrosim
+description: Documentation of PeterMader/astrosim
 baseurl: ""
 url: "petermader.github.io" # the base hostname & protocol
 github_username:  PeterMader

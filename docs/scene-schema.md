@@ -1,4 +1,6 @@
-## AstroSim scenes
+# AstroSim scenes
+[Home](./)
+
 AstroSim scenes are stored as JSON objects. An AstroSim scene must fulfill these conditions:
 * It must be valid [JSON](http://json.org).
 * It must have a main object.
