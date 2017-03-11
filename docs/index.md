@@ -12,4 +12,4 @@ AstroSim is based on JavaScript and runs in the browser, which means that you do
 
 Everything is measured in metric units: distance in meters, mass in kilograms. The time is accelerated, otherwise realistic simulations would take very much time.
 
-[Hotkeys](hotkeys)
+List of all available [Hotkeys](hotkeys).

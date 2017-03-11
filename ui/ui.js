@@ -96,10 +96,10 @@ const ui = module.exports = ASTRO.ui = {
     const selection = ui.selectedObjects
     const selectionIndices = selection.map((object, index) => object.id)
     const {list} = this
-    const children = Array.prototype.slice.call(list.children)
+    const children = Array.from(list.children)
     const {length} = children
     let index
-    for (index = 0; index < length; index += 1) {
+    for (index in children) {
       const item = children[index]
       if (selectionIndices.indexOf(index) > -1) {
         item.classList.add('selected-object')

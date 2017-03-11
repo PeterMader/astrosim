@@ -20,7 +20,7 @@ module.exports = function () {
   }, {passive: true})
 
   // events for the canvas translation
-  let startX = 0, startY = 0
+  let startX = 0, startY = 0, distance = 0
   canvas.addEventListener('mousedown', (e) => {
     animation.mouseHeld = true
 
@@ -37,6 +37,7 @@ module.exports = function () {
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault()
+    distance = animation.ratio
     canvas.dispatchEvent(new MouseEvent('mousedown', {
       clientX: e.touches[0].clientX,
       clientY: e.touches[0].clientY
@@ -45,10 +46,24 @@ module.exports = function () {
 
   canvas.addEventListener('touchmove', (e) => {
     e.preventDefault()
-    canvas.dispatchEvent(new MouseEvent('mousemove', {
-      clientX: e.touches[0].clientX,
-      clientY: e.touches[0].clientY
-    }))
+    const {touches} = e
+    if (touches.length === 1) {
+      // translate
+      canvas.dispatchEvent(new MouseEvent('mousemove', {
+        clientX: touches[0].clientX,
+        clientY: touches[0].clientY
+      }))
+    } else if (touches.length > 1) {
+      // scale
+      const x = touches[0].clientX - touches[1].clientX
+      const y = touches[0].clientY - touches[1].clientY
+      const newDistance = Math.sqrt(x * x + y * y)
+      const centerX = touches[0].clientX + x / 2 - canvas.width / 2
+      const centerY = touches[0].clientY + y / 2 - canvas.height / 2
+      const factor = newDistance / distance
+      animation.scale(factor, centerX, centerY)
+      distance = newDistance
+    }
   })
 
   canvas.addEventListener('touchend', (e) => {

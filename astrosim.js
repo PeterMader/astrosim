@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ASTRO.animation = require('./animation/animation.js')
   ASTRO.content = require('./content/content.js')
   ASTRO.ui = require('./ui/ui.js')
-
+  
   ASTRO.animation.initialize()
   ASTRO.content.initialize()
   ASTRO.ui.initialize()
