@@ -35,6 +35,8 @@ const ui = module.exports = ASTRO.ui = {
       list.removeChild(list.firstChild)
     }
 
+    const fragment = document.createDocumentFragment()
+
     const {objects} = content
     for (index in objects) {
       const object = objects[index]
@@ -64,8 +66,11 @@ const ui = module.exports = ASTRO.ui = {
 
       item.appendChild(contentElt)
       item.appendChild(buttonWrapper)
-      list.appendChild(item)
+      
+      fragment.appendChild(item)
     }
+
+    list.appendChild(fragment)
 
     this.updateSelection()
   },

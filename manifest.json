@@ -1,0 +1,17 @@
+{
+  "name": "AstroSim",
+  "short_name": "AstroSim",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#DDDDDD",
+  "theme_color": "#3477CC",
+  "description": "A simulation of the movement of the planets.",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "res/astrosim_favicon_192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

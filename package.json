@@ -4,7 +4,8 @@
   "description": "A simulation of the movement of the planets.",
   "main": "astrosim.js",
   "scripts": {
-    "build": "./build.bat"
+    "build": "./build.bat",
+    "build-debug": "./build-debug.bat"
   },
   "keywords": [
     "simulation",
