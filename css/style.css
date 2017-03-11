@@ -158,6 +158,11 @@ a:hover {
   z-index: 6;
 }
 
+#scene-name {
+  margin: 5px 0;
+  padding: 0;
+}
+
 .close-button {
   position: absolute;
   top: 5px;
@@ -199,7 +204,7 @@ a:hover {
   display: flex;
 }
 
-.description {
+.description, #drop-area {
   color: #555555;
   font-size: 90%;
 }
@@ -313,6 +318,13 @@ input:focus {
 
 .main-button:hover, .main-button:focus {
   color: #000000;
+}
+
+#drop-area {
+  margin-top: 10px;
+  border: 1px dashed #888888;
+  padding: 5px;
+  text-align: center;
 }
 
 @media (max-width: 900px) {

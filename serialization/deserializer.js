@@ -7,46 +7,25 @@ const isColorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
 
 module.exports = class Deserializer {
 
-  static selectScene (data, cb) {
-    if (Deserializer.validateData(data)) {
-      content.objects = []
-      content.histories = []
-      content.currentId = content.realTime = content.simulatedTime = content.ticks = content.pendingTicks = 0
-      content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
-      content.TIME_FACTOR = data.content.timeFactor
+  static selectScene (data) {
+    content.objects = []
+    content.histories = []
+    content.currentId = content.realTime = content.simulatedTime = content.ticks = content.pendingTicks = 0
+    content.add.apply(content, data.content.objects.map((item) => Body.fromSerialized(item)))
+    content.TIME_FACTOR = data.content.timeFactor
 
-      animation.frames = 0
-      animation.translation[0] = data.viewport.translationX
-      animation.translation[1] = data.viewport.translationY
-      animation.ratio = data.viewport.ratio
-      animation.width = animation.canvas.width * animation.ratio
-      animation.height = animation.canvas.height * animation.ratio
-      ui.selectedObjects = data.content.selectedObjectIndices.map((index) => {
-        return content.objects[index]
-      })
+    animation.frames = 0
+    animation.translation[0] = data.viewport.translationX
+    animation.translation[1] = data.viewport.translationY
+    animation.ratio = data.viewport.ratio
+    animation.width = animation.canvas.width * animation.ratio
+    animation.height = animation.canvas.height * animation.ratio
+    ui.selectedObjects = data.content.selectedObjectIndices.map((index) => {
+      return content.objects[index]
+    })
 
-      animation.shouldRender = true
-      ui.pause()
-      if (typeof cb === 'function') {
-        cb()
-      }
-    } else {
-      if (typeof cb === 'function') {
-        cb('Error: Invalid scene.')
-      }
-    }
-  }
-
-  static deserialize (string, cb) {
-    let data
-    try {
-      data = JSON.parse(string)
-    } catch (e) {
-      cb(`Error parsing the selected file: ${e.getMessage()}`)
-      return
-    }
-
-    Deserializer.selectScene(data, cb)
+    animation.shouldRender = true
+    ui.pause()
   }
 
   static validateData (data) {

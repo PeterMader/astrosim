@@ -71,7 +71,7 @@ animation.render = function () {
   }
 
   if (objects.length > 0) {
-    canvasCenter = content.temp1
+    const canvasCenter = content.temp1
     canvasCenter[0] = canvas.width / 2
     canvasCenter[1] = canvas.height / 2
     const pos = content.temp2

@@ -5,4 +5,4 @@
 @echo ] >> .\list.js
 
 @cd ..
-@.\node_modules\.bin\browserify astrosim.js | .\node_modules\.bin\babel --presets=es2015 | .\node_modules\.bin\uglifyjs -m > dist\astrosim.js
+@.\node_modules\.bin\browserify astrosim.js -o dist\astrosim.js

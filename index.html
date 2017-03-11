@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html manifest="cache.manifest">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="google-site-verification" content="kJmLoNFf7L1Q8kaIHnkniGku7FRZ0XJRLnk_qwIlZGE" />
+
+    <!-- Link to the app manifest -->
+    <link rel="manifest" href="manifest.json">
 
     <!-- Google Chrome for Android toolbar color -->
     <meta name="theme-color" content="#3477CC">
@@ -64,8 +67,9 @@
           Location of saved scene:
           <input name="file" id="deserialize-file" type="file">
           <div class="description">The location of the saved file (AstroSim scenes are saved as JSON files).</div>
+          <div id="drop-area">Or simply drop the scene file here.</div>
         </div>
-        <div class="item hidden" id="scene-info">
+        <div class="item" id="scene-info">
           <h5 id="scene-name"></h5>
           <div class="description" id="scene-description"></div>
         </div>

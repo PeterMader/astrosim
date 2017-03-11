@@ -4,7 +4,8 @@
   "description": "A simulation of the movement of the planets.",
   "main": "astrosim.js",
   "scripts": {
-    "build": "./build.bat"
+    "build": "./build.bat",
+    "build-debug": "./build-debug.bat"
   },
   "keywords": [
     "simulation",
@@ -16,5 +17,10 @@
   },
   "author": "Peter Mader",
   "license": "MIT",
-  "devDependencies": {}
+  "devDependencies": {
+    "babel-cli": "^6.23.0",
+    "babel-preset-env": "^1.2.1",
+    "browserify": "^14.1.0",
+    "uglify-js": "^2.8.12"
+  }
 }
