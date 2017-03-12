@@ -37,10 +37,15 @@ module.exports = function () {
 
   canvas.addEventListener('touchstart', (e) => {
     e.preventDefault()
-    distance = animation.ratio
+    const {touches} = e
+    if (touches.length > 1) {
+      const x = touches[0].clientX - touches[1].clientX
+      const y = touches[0].clientY - touches[1].clientY
+      distance = Math.sqrt(x * x + y * y)
+    }
     canvas.dispatchEvent(new MouseEvent('mousedown', {
-      clientX: e.touches[0].clientX,
-      clientY: e.touches[0].clientY
+      clientX: touches[0].clientX,
+      clientY: touches[0].clientY
     }))
   })
 
