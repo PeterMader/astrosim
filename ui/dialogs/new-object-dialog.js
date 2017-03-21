@@ -35,13 +35,8 @@ newObjectDialog.on('drag-end', () => {
 })
 
 document.getElementById('new-object-drag-position').addEventListener('click', () => {
-  if (!radius.checkValidity()) {
-    radius._inputElement.focus()
-    return
-  }
-
   animation.dragging = true
-  animation.draggingRadius = radius.value
+  animation.draggingRadius = radius.value || 1
   animation.draggingColor = color.value
   newObjectDialog.hide()
 })
