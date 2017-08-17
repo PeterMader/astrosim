@@ -69,7 +69,9 @@ module.exports = class Body {
       if (body === this || body.id === this.id) {
         continue
       }
-      this.interact(body, objects, index, deltaTime)
+      if (!this.interact(body, objects, index, deltaTime)) {
+        return
+      }
     }
   }
 
@@ -85,7 +87,7 @@ module.exports = class Body {
     if (length < this.radius) {
       const newPosition = Vec2.weighedCenter(this.position, this.mass, body.position, body.mass, distance)
       const newRadius = Math.sqrt(this.radius * this.radius + body.radius * body.radius)
-      const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
+      const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius, this.name + '+' + body.name)
 
       // remove the two colliding objects
       content.remove(body)
@@ -100,20 +102,22 @@ module.exports = class Body {
 
       // finally add the new object and show it in the UI
       content.add(newBody)
-    } else {
-      // calculate the gravity
-      const force = content.temp2
-      Vec2.scale(
-        Vec2.normalize(distance, content.temp3),
-        -deltaTime * content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
-        force
-      )
-
-      // move the body
-      this.applyForce(force)
-
-      content.save(this.id, body.id, Vec2.getLength(force), Vec2.getLength(distance))
+      return false
     }
+
+    // calculate the gravity
+    const force = content.temp2
+    Vec2.scale(
+      Vec2.normalize(distance, content.temp3),
+      -deltaTime * content.GRAVITY_CONSTANT * (this.mass * body.mass) / (length * length),
+      force
+    )
+
+    // move the body
+    this.applyForce(force)
+
+    content.save(this.id, body.id, Vec2.getLength(force), Vec2.getLength(distance))
+    return true
   }
 
   static fromSerialized (data) {
