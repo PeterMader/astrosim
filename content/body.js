@@ -84,7 +84,7 @@ module.exports = class Body {
     // check for collision
     if (length < this.radius) {
       const newPosition = Vec2.weighedCenter(this.position, this.mass, body.position, body.mass, distance)
-      const newRadius = Math.pow(4 / 3 * Math.PI * Math.pow(this.radius, 3) + 4 / 3 * Math.PI * Math.pow(body.radius, 3), 1 / 3)
+      const newRadius = Math.sqrt(this.radius * this.radius + body.radius * body.radius)
       const newBody = new Body(Vec2.copy(newPosition), this.mass + body.mass, newRadius)
 
       // remove the two colliding objects
