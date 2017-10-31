@@ -107,7 +107,7 @@ const content = module.exports = ASTRO.content = {
     this.pendingTicks += this.TICKS_PER_FRAME
 
     // calculate how much time passed since the last frame
-    const deltaTime = realDeltaTime < 1000 ? realDeltaTime : 1000
+    const deltaTime = Math.min(realDeltaTime, 1000)
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaTime / 1000
     this.simulatedTime += deltaSecs
