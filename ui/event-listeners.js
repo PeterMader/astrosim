@@ -77,7 +77,7 @@ module.exports = function () {
       return
     }
     let key = Number(e.key)
-    if (key === 0) {
+    if (key === 0 && e.key !== ' ') { // space bar get evaluated to 0
       key = 10
     }
     if (key > 0 && key < 11) {

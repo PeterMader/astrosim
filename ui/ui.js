@@ -66,7 +66,7 @@ const ui = module.exports = ASTRO.ui = {
 
       item.appendChild(contentElt)
       item.appendChild(buttonWrapper)
-      
+
       fragment.appendChild(item)
     }
 
@@ -106,7 +106,7 @@ const ui = module.exports = ASTRO.ui = {
     let index
     for (index in children) {
       const item = children[index]
-      if (selectionIndices.indexOf(index) > -1) {
+      if (selectionIndices.indexOf(Number(index)) > -1) {
         item.classList.add('selected-object')
       } else {
         item.classList.remove('selected-object')

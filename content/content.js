@@ -18,8 +18,6 @@ const content = module.exports = ASTRO.content = {
   simulatedTime: 0, // how much time passed in the simulation since the simulation was started with the current scene
   pendingTicks: 0, // how many computations have to be performed in th next frame
   TICKS_PER_FRAME: 10, // how many computations should be performed in one frame
-
-  SECONDS_IN_YEAR: 31556927, // a year has 31,556,927
   TIME_FACTOR: 1, // the factor the time passed is multiplied by
 
   // temporary vectors, so that no new memory must be allocated
@@ -30,7 +28,7 @@ const content = module.exports = ASTRO.content = {
   histories: [], // 2 dimensional array containing all histories between the planets
 
   initialize () {
-    this.TIME_FACTOR = this.SECONDS_IN_YEAR / 12 // initial factor: 1s in simulation equals 1 month
+    this.TIME_FACTOR = 31556927 / 12 // a year has 31,556,927 seconds, initial factor: 1s in simulation equals 1 month
   },
 
   // saves all the objects passed to it and displays them
@@ -72,12 +70,12 @@ const content = module.exports = ASTRO.content = {
 
   // removes an object from the object list
   remove (object) {
-    this.objects.splice(object.id, 1)
+    // this.objects.splice(object.id, 1) // maybe remove this line and delete the object later?
     this.toBeDeleted.push(object.id)
   },
 
   commitRemove () {
-    const {histories, toBeDeleted} = this
+    const {histories, toBeDeleted, objects} = this
     let deletionIndex
     for (deletionIndex in toBeDeleted) {
       const objectIndex = toBeDeleted[deletionIndex]
@@ -89,8 +87,13 @@ const content = module.exports = ASTRO.content = {
         }
       }
       histories.splice(objectIndex, 1)
+      objects.splice(objectIndex, 1)
+      for (index in objects) {
+        objects[index].id = Number(index)
+      }
     }
     this.toBeDeleted = []
+    ASTRO.ui.update()
   },
 
   // calls the 'update' method of all the objects
@@ -104,7 +107,7 @@ const content = module.exports = ASTRO.content = {
     this.pendingTicks += this.TICKS_PER_FRAME
 
     // calculate how much time passed since the last frame
-    const deltaTime = realDeltaTime < 1000 ? realDeltaTime : 1000
+    const deltaTime = Math.min(realDeltaTime, 1000)
     const deltaSecs = deltaTime / 1000 * this.TIME_FACTOR / this.TICKS_PER_FRAME
     this.realTime += deltaTime / 1000
     this.simulatedTime += deltaSecs
